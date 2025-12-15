@@ -12,6 +12,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<OtpRequest> OtpRequests { get; set; }
     public DbSet<OtpRateLimit> OtpRateLimits { get; set; }
+    public DbSet<ExternalLogin> ExternalLogins { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +36,17 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<OtpRateLimit>(entity =>
         {
             entity.HasIndex(e => e.PhoneNumber).IsUnique();
+        });
+
+        // ExternalLogin configuration
+        modelBuilder.Entity<ExternalLogin>(entity =>
+        {
+            // Each provider+providerUserId combination must be unique
+            entity.HasIndex(e => new { e.Provider, e.ProviderUserId }).IsUnique();
+            // Each user can only have one login per provider
+            entity.HasIndex(e => new { e.UserId, e.Provider }).IsUnique();
+            // Index for looking up by user
+            entity.HasIndex(e => e.UserId);
         });
     }
 }

@@ -130,3 +130,99 @@ public class ForceAuthRequest
     [Required]
     public string ApiSecretKey { get; set; } = string.Empty;
 }
+
+// External login request (login or register via external provider)
+public class ExternalLoginRequest
+{
+    /// <summary>
+    /// Provider name (e.g., "google", "apple", "wechat", "facebook", "github")
+    /// </summary>
+    [Required]
+    [MaxLength(50)]
+    public string Provider { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The unique user ID from the external provider
+    /// </summary>
+    [Required]
+    [MaxLength(255)]
+    public string ProviderUserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional: Email from the provider
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? ProviderEmail { get; set; }
+
+    /// <summary>
+    /// Optional: Display name from the provider
+    /// </summary>
+    [MaxLength(255)]
+    public string? ProviderDisplayName { get; set; }
+
+    /// <summary>
+    /// API secret key for server-to-server authentication
+    /// </summary>
+    [Required]
+    public string ApiSecretKey { get; set; } = string.Empty;
+}
+
+// Link external provider to existing account (requires JWT auth)
+public class LinkExternalLoginRequest
+{
+    /// <summary>
+    /// Provider name (e.g., "google", "apple", "wechat", "facebook", "github")
+    /// </summary>
+    [Required]
+    [MaxLength(50)]
+    public string Provider { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The unique user ID from the external provider
+    /// </summary>
+    [Required]
+    [MaxLength(255)]
+    public string ProviderUserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional: Email from the provider
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? ProviderEmail { get; set; }
+
+    /// <summary>
+    /// Optional: Display name from the provider
+    /// </summary>
+    [MaxLength(255)]
+    public string? ProviderDisplayName { get; set; }
+}
+
+// Unlink external provider request
+public class UnlinkExternalLoginRequest
+{
+    /// <summary>
+    /// Provider name to unlink (e.g., "google", "apple", "wechat")
+    /// </summary>
+    [Required]
+    [MaxLength(50)]
+    public string Provider { get; set; } = string.Empty;
+}
+
+// External login info in response
+public class ExternalLoginResponse
+{
+    public string Provider { get; set; } = string.Empty;
+    public string ProviderUserId { get; set; } = string.Empty;
+    public string? ProviderEmail { get; set; }
+    public string? ProviderDisplayName { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastUsedAt { get; set; }
+}
+
+// Extended user response with external logins
+public class UserWithExternalLoginsResponse : UserResponse
+{
+    public List<ExternalLoginResponse> ExternalLogins { get; set; } = new();
+}
