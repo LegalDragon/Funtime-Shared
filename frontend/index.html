@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTPB Auth - Test Frontend</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FTPB Auth Service</h1>
+            <p class="subtitle">Test Frontend</p>
+        </header>
+
+        <!-- API Configuration -->
+        <section class="config-section">
+            <h3>API Configuration</h3>
+            <div class="form-group">
+                <label for="apiUrl">API Base URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+            </div>
+        </section>
+
+        <!-- User Status -->
+        <section id="userStatus" class="user-status hidden">
+            <h3>Logged In As:</h3>
+            <div id="userInfo"></div>
+            <button onclick="logout()" class="btn btn-secondary">Logout</button>
+        </section>
+
+        <!-- Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="auth">Auth</button>
+            <button class="tab-btn" data-tab="otp">Phone/OTP</button>
+            <button class="tab-btn" data-tab="link">Link Accounts</button>
+            <button class="tab-btn" data-tab="external">External Login</button>
+            <button class="tab-btn" data-tab="password">Password</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Auth Tab -->
+            <div id="auth" class="tab-pane active">
+                <div class="card-grid">
+                    <!-- Register -->
+                    <div class="card">
+                        <h3>Register</h3>
+                        <form id="registerForm">
+                            <div class="form-group">
+                                <label for="regEmail">Email:</label>
+                                <input type="email" id="regEmail" required placeholder="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="regPassword">Password:</label>
+                                <input type="password" id="regPassword" required minlength="8" placeholder="Min 8 characters">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </form>
+                    </div>
+
+                    <!-- Login -->
+                    <div class="card">
+                        <h3>Login</h3>
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label for="loginEmail">Email:</label>
+                                <input type="email" id="loginEmail" required placeholder="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">Password:</label>
+                                <input type="password" id="loginPassword" required placeholder="Your password">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                    </div>
+
+                    <!-- Get Current User -->
+                    <div class="card">
+                        <h3>Get Current User</h3>
+                        <p>Fetch your user information (requires login)</p>
+                        <button onclick="getMe()" class="btn btn-secondary">Get Me</button>
+                    </div>
+
+                    <!-- Validate Token -->
+                    <div class="card">
+                        <h3>Validate Token</h3>
+                        <form id="validateForm">
+                            <div class="form-group">
+                                <label for="validateToken">Token:</label>
+                                <textarea id="validateToken" rows="3" placeholder="JWT token to validate"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">Validate</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTP Tab -->
+            <div id="otp" class="tab-pane">
+                <div class="card-grid">
+                    <!-- Send OTP -->
+                    <div class="card">
+                        <h3>Send OTP</h3>
+                        <form id="sendOtpForm">
+                            <div class="form-group">
+                                <label for="otpPhone">Phone Number:</label>
+                                <input type="tel" id="otpPhone" required placeholder="+1234567890">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send OTP</button>
+                        </form>
+                    </div>
+
+                    <!-- Verify OTP -->
+                    <div class="card">
+                        <h3>Verify OTP & Login</h3>
+                        <form id="verifyOtpForm">
+                            <div class="form-group">
+                                <label for="verifyPhone">Phone Number:</label>
+                                <input type="tel" id="verifyPhone" required placeholder="+1234567890">
+                            </div>
+                            <div class="form-group">
+                                <label for="verifyCode">OTP Code:</label>
+                                <input type="text" id="verifyCode" required maxlength="6" placeholder="123456">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Verify & Login</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Link Tab -->
+            <div id="link" class="tab-pane">
+                <div class="card-grid">
+                    <!-- Link Phone -->
+                    <div class="card">
+                        <h3>Link Phone to Account</h3>
+                        <p class="hint">First send OTP, then link</p>
+                        <form id="linkPhoneForm">
+                            <div class="form-group">
+                                <label for="linkPhoneNumber">Phone Number:</label>
+                                <input type="tel" id="linkPhoneNumber" required placeholder="+1234567890">
+                            </div>
+                            <div class="form-group">
+                                <label for="linkPhoneCode">OTP Code:</label>
+                                <input type="text" id="linkPhoneCode" required maxlength="6" placeholder="123456">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Link Phone</button>
+                        </form>
+                    </div>
+
+                    <!-- Link Email -->
+                    <div class="card">
+                        <h3>Link Email to Account</h3>
+                        <p class="hint">Add email/password to phone-only account</p>
+                        <form id="linkEmailForm">
+                            <div class="form-group">
+                                <label for="linkEmail">Email:</label>
+                                <input type="email" id="linkEmail" required placeholder="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="linkEmailPassword">Password:</label>
+                                <input type="password" id="linkEmailPassword" required minlength="8" placeholder="Min 8 characters">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Link Email</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- External Login Tab -->
+            <div id="external" class="tab-pane">
+                <div class="card-grid">
+                    <!-- Link External -->
+                    <div class="card">
+                        <h3>Link External Provider</h3>
+                        <p class="hint">Link Google, Apple, WeChat, etc.</p>
+                        <form id="linkExternalForm">
+                            <div class="form-group">
+                                <label for="linkProvider">Provider:</label>
+                                <select id="linkProvider" required>
+                                    <option value="google">Google</option>
+                                    <option value="apple">Apple</option>
+                                    <option value="wechat">WeChat</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="github">GitHub</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="linkProviderId">Provider User ID:</label>
+                                <input type="text" id="linkProviderId" required placeholder="provider-user-id-123">
+                            </div>
+                            <div class="form-group">
+                                <label for="linkProviderEmail">Provider Email (optional):</label>
+                                <input type="email" id="linkProviderEmail" placeholder="user@gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="linkProviderName">Display Name (optional):</label>
+                                <input type="text" id="linkProviderName" placeholder="John Doe">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Link Provider</button>
+                        </form>
+                    </div>
+
+                    <!-- Unlink External -->
+                    <div class="card">
+                        <h3>Unlink External Provider</h3>
+                        <form id="unlinkExternalForm">
+                            <div class="form-group">
+                                <label for="unlinkProvider">Provider:</label>
+                                <select id="unlinkProvider" required>
+                                    <option value="google">Google</option>
+                                    <option value="apple">Apple</option>
+                                    <option value="wechat">WeChat</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="github">GitHub</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Unlink Provider</button>
+                        </form>
+                    </div>
+
+                    <!-- Get External Logins -->
+                    <div class="card">
+                        <h3>View Linked Providers</h3>
+                        <button onclick="getExternalLogins()" class="btn btn-secondary">Get External Logins</button>
+                        <div id="externalLoginsList" class="result-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Tab -->
+            <div id="password" class="tab-pane">
+                <div class="card-grid">
+                    <!-- Change Password -->
+                    <div class="card">
+                        <h3>Change Password</h3>
+                        <p class="hint">For logged-in users</p>
+                        <form id="changePasswordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password:</label>
+                                <input type="password" id="currentPassword" required placeholder="Current password">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password:</label>
+                                <input type="password" id="newPassword" required minlength="8" placeholder="Min 8 characters">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </form>
+                    </div>
+
+                    <!-- Reset Password -->
+                    <div class="card">
+                        <h3>Reset Password (Forgot)</h3>
+                        <p class="hint">Use phone OTP to reset password</p>
+                        <form id="resetPasswordForm">
+                            <div class="form-group">
+                                <label for="resetPhone">Phone Number:</label>
+                                <input type="tel" id="resetPhone" required placeholder="+1234567890">
+                            </div>
+                            <div class="form-group">
+                                <label for="resetCode">OTP Code:</label>
+                                <input type="text" id="resetCode" required maxlength="6" placeholder="123456">
+                            </div>
+                            <div class="form-group">
+                                <label for="resetNewPassword">New Password:</label>
+                                <input type="password" id="resetNewPassword" required minlength="8" placeholder="Min 8 characters">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Reset Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response Log -->
+        <section class="response-section">
+            <div class="response-header">
+                <h3>Response Log</h3>
+                <button onclick="clearLog()" class="btn btn-small">Clear</button>
+            </div>
+            <div id="responseLog" class="response-log"></div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -226,3 +226,33 @@ public class UserWithExternalLoginsResponse : UserResponse
 {
     public List<ExternalLoginResponse> ExternalLogins { get; set; } = new();
 }
+
+// Change password request (for logged-in users)
+public class ChangePasswordRequest
+{
+    [Required]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8)]
+    [MaxLength(100)]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+// Reset password request (using phone OTP)
+public class ResetPasswordRequest
+{
+    [Required]
+    [Phone]
+    [MaxLength(20)]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8)]
+    [MaxLength(100)]
+    public string NewPassword { get; set; } = string.Empty;
+}

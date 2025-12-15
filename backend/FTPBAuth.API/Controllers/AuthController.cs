@@ -737,6 +737,120 @@ public class AuthController : ControllerBase
         return Ok(externalLogins);
     }
 
+    /// <summary>
+    /// Change password for logged-in user
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<ActionResult<ApiResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId == null)
+        {
+            return Unauthorized(new ApiResponse
+            {
+                Success = false,
+                Message = "Invalid token."
+            });
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return NotFound(new ApiResponse
+            {
+                Success = false,
+                Message = "User not found."
+            });
+        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "This account does not have a password set. Use link-email to set one."
+            });
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "Current password is incorrect."
+            });
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Password changed for user {UserId}", userId);
+
+        return Ok(new ApiResponse
+        {
+            Success = true,
+            Message = "Password changed successfully."
+        });
+    }
+
+    /// <summary>
+    /// Reset password using phone OTP (for users who forgot their password)
+    /// Call otp/send first to receive the OTP code
+    /// </summary>
+    [HttpPost("reset-password")]
+    public async Task<ActionResult<ApiResponse>> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
+
+        // Verify OTP
+        var (success, message) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
+
+        if (!success)
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = message
+            });
+        }
+
+        // Find user by phone number
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhone);
+
+        if (user == null)
+        {
+            return NotFound(new ApiResponse
+            {
+                Success = false,
+                Message = "No account found with this phone number."
+            });
+        }
+
+        if (string.IsNullOrEmpty(user.Email))
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "This account does not have an email address. Password reset is not applicable."
+            });
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Password reset for user {UserId} via phone OTP", user.Id);
+
+        return Ok(new ApiResponse
+        {
+            Success = true,
+            Message = "Password reset successfully. You can now login with your new password."
+        });
+    }
+
     private int? GetUserIdFromToken()
     {
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
