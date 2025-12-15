@@ -120,3 +120,13 @@ public class ValidateTokenResponse
     public string? PhoneNumber { get; set; }
     public string? Message { get; set; }
 }
+
+// Force auth request (for legacy system integration)
+public class ForceAuthRequest
+{
+    [Required]
+    public int UserId { get; set; }
+
+    [Required]
+    public string ApiSecretKey { get; set; } = string.Empty;
+}

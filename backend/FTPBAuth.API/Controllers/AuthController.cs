@@ -15,17 +15,20 @@ public class AuthController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IJwtService _jwtService;
     private readonly IOtpService _otpService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         ApplicationDbContext context,
         IJwtService jwtService,
         IOtpService otpService,
+        IConfiguration configuration,
         ILogger<AuthController> logger)
     {
         _context = context;
         _jwtService = jwtService;
         _otpService = otpService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -394,6 +397,61 @@ public class AuthController : ControllerBase
             Email = email,
             PhoneNumber = phoneNumber,
             Message = "Token is valid."
+        });
+    }
+
+    /// <summary>
+    /// Force authenticate as a user by ID (for legacy system integration)
+    /// Requires API secret key
+    /// </summary>
+    [HttpPost("force-auth")]
+    public async Task<ActionResult<AuthResponse>> ForceAuth([FromBody] ForceAuthRequest request)
+    {
+        var configuredSecret = _configuration["ApiSecretKey"];
+
+        if (string.IsNullOrEmpty(configuredSecret) || configuredSecret == "YOUR_SUPER_SECRET_API_KEY_CHANGE_IN_PRODUCTION")
+        {
+            _logger.LogError("Force auth attempted but API secret key is not configured");
+            return StatusCode(500, new AuthResponse
+            {
+                Success = false,
+                Message = "API secret key is not configured."
+            });
+        }
+
+        if (request.ApiSecretKey != configuredSecret)
+        {
+            _logger.LogWarning("Force auth attempted with invalid API secret key for user {UserId}", request.UserId);
+            return Unauthorized(new AuthResponse
+            {
+                Success = false,
+                Message = "Invalid API secret key."
+            });
+        }
+
+        var user = await _context.Users.FindAsync(request.UserId);
+        if (user == null)
+        {
+            return NotFound(new AuthResponse
+            {
+                Success = false,
+                Message = "User not found."
+            });
+        }
+
+        user.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var token = _jwtService.GenerateToken(user);
+
+        _logger.LogInformation("Force auth successful for user {UserId}", request.UserId);
+
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Token = token,
+            Message = "Force authentication successful.",
+            User = MapToUserResponse(user)
         });
     }
 
