@@ -36,3 +36,11 @@ backup/
 #uploads
 uploads/
 upload/
+
+
+#visual studio code
+*.vscode/
+bin/
+obj/
+*.dll
+*.exe  
