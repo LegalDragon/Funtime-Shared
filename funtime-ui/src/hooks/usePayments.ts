@@ -2,19 +2,40 @@ import { useState, useCallback, useEffect } from 'react';
 import type { PaymentMethod, Payment, Subscription } from '../types';
 import { getFuntimeClient } from '../api/client';
 
+export interface CreatePaymentOptions {
+  paymentMethodId: string;
+  amount: number;
+  currency?: string;
+  description?: string;
+  siteKey?: string;
+}
+
+export interface SubscribeOptions {
+  priceId: string;
+  siteKey?: string;
+}
+
 export interface UsePaymentsReturn {
   paymentMethods: PaymentMethod[];
   payments: Payment[];
   subscriptions: Subscription[];
   isLoading: boolean;
   error: string | null;
+  // Setup & Payment Methods
   createSetupIntent: () => Promise<string>;
+  addPaymentMethod: (stripePaymentMethodId: string, setAsDefault?: boolean) => Promise<PaymentMethod>;
   attachPaymentMethod: (stripePaymentMethodId: string, setAsDefault?: boolean) => Promise<PaymentMethod>;
+  removePaymentMethod: (paymentMethodId: number) => Promise<void>;
   deletePaymentMethod: (stripePaymentMethodId: string) => Promise<void>;
   setDefaultPaymentMethod: (stripePaymentMethodId: string) => Promise<void>;
-  createPayment: (amountCents: number, description?: string, siteKey?: string) => Promise<{ clientSecret: string; paymentIntentId: string }>;
+  // Payments
+  createPayment: (options: CreatePaymentOptions) => Promise<Payment>;
+  createPaymentIntent: (amountCents: number, description?: string, siteKey?: string) => Promise<{ clientSecret: string; paymentIntentId: string }>;
+  // Subscriptions
+  subscribe: (options: SubscribeOptions) => Promise<Subscription>;
   createSubscription: (stripePriceId: string, siteKey?: string) => Promise<Subscription>;
   cancelSubscription: (subscriptionId: number, cancelAtPeriodEnd?: boolean) => Promise<Subscription>;
+  resumeSubscription: (subscriptionId: number) => Promise<Subscription>;
   refresh: () => Promise<void>;
 }
 
@@ -78,10 +99,36 @@ export function usePayments(): UsePaymentsReturn {
     })));
   }, []);
 
-  const createPayment = useCallback(async (amountCents: number, description?: string, siteKey?: string) => {
+  // Alias for attachPaymentMethod (convenience)
+  const addPaymentMethod = attachPaymentMethod;
+
+  // Remove payment method by internal ID
+  const removePaymentMethod = useCallback(async (paymentMethodId: number): Promise<void> => {
+    const method = paymentMethods.find(m => m.paymentMethodId === paymentMethodId);
+    if (method) {
+      await deletePaymentMethod(method.stripePaymentMethodId);
+    }
+  }, [paymentMethods, deletePaymentMethod]);
+
+  // Create payment intent (for custom flows)
+  const createPaymentIntent = useCallback(async (amountCents: number, description?: string, siteKey?: string) => {
     const client = getFuntimeClient();
     const response = await client.createPayment(amountCents, description, siteKey);
     return { clientSecret: response.clientSecret, paymentIntentId: response.paymentIntentId };
+  }, []);
+
+  // Create payment (simplified API for components)
+  const createPayment = useCallback(async (options: CreatePaymentOptions): Promise<Payment> => {
+    const client = getFuntimeClient();
+    const response = await client.createPaymentWithMethod(
+      options.paymentMethodId,
+      options.amount,
+      options.currency || 'usd',
+      options.description,
+      options.siteKey
+    );
+    setPayments(prev => [...prev, response]);
+    return response;
   }, []);
 
   const createSubscription = useCallback(async (stripePriceId: string, siteKey?: string): Promise<Subscription> => {
@@ -91,10 +138,22 @@ export function usePayments(): UsePaymentsReturn {
     return sub;
   }, []);
 
+  // Alias for createSubscription (convenience)
+  const subscribe = useCallback(async (options: SubscribeOptions): Promise<Subscription> => {
+    return createSubscription(options.priceId, options.siteKey);
+  }, [createSubscription]);
+
   const cancelSubscription = useCallback(async (subscriptionId: number, cancelAtPeriodEnd = true): Promise<Subscription> => {
     const client = getFuntimeClient();
     const sub = await client.cancelSubscription(subscriptionId, cancelAtPeriodEnd);
-    setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? sub : s));
+    setSubscriptions(prev => prev.map(s => s.subscriptionId === subscriptionId ? sub : s));
+    return sub;
+  }, []);
+
+  const resumeSubscription = useCallback(async (subscriptionId: number): Promise<Subscription> => {
+    const client = getFuntimeClient();
+    const sub = await client.resumeSubscription(subscriptionId);
+    setSubscriptions(prev => prev.map(s => s.subscriptionId === subscriptionId ? sub : s));
     return sub;
   }, []);
 
@@ -109,12 +168,17 @@ export function usePayments(): UsePaymentsReturn {
     isLoading,
     error,
     createSetupIntent,
+    addPaymentMethod,
     attachPaymentMethod,
+    removePaymentMethod,
     deletePaymentMethod,
     setDefaultPaymentMethod,
     createPayment,
+    createPaymentIntent,
+    subscribe,
     createSubscription,
     cancelSubscription,
+    resumeSubscription,
     refresh,
   };
 }

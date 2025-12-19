@@ -27,6 +27,8 @@ export interface UserProfile {
 
 export interface UserSite {
   id: number;
+  userSiteId: number; // alias for id
+  userId: number;
   siteKey: string;
   joinedAt: string;
   isActive: boolean;
@@ -59,8 +61,14 @@ export interface ValidateTokenResponse {
 // Payment types
 export interface PaymentMethod {
   id: number;
+  paymentMethodId: number; // alias for id
   stripePaymentMethodId: string;
   type: string;
+  brand: string;
+  last4: string;
+  expiryMonth: number;
+  expiryYear: number;
+  // Legacy aliases
   cardBrand?: string;
   cardLast4?: string;
   cardExpMonth?: number;
@@ -71,7 +79,10 @@ export interface PaymentMethod {
 
 export interface Payment {
   id: number;
-  stripePaymentId: string;
+  paymentId: number; // alias for id
+  stripePaymentIntentId: string;
+  stripePaymentId?: string; // legacy
+  amount: number;
   amountCents: number;
   amountDollars: number;
   currency: string;
@@ -83,15 +94,18 @@ export interface Payment {
 
 export interface Subscription {
   id: number;
+  subscriptionId: number; // alias for id
   stripeSubscriptionId: string;
   stripePriceId?: string;
   status: string;
   planName?: string;
   siteKey?: string;
+  amount: number;
   amountCents?: number;
   amountDollars?: number;
   currency: string;
-  interval?: string;
+  interval: string;
+  startDate: string;
   currentPeriodStart?: string;
   currentPeriodEnd?: string;
   canceledAt?: string;

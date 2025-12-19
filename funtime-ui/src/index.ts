@@ -1,5 +1,5 @@
 // API Client
-export { FuntimeClient, initFuntimeClient, getFuntimeClient } from './api/client';
+export { FuntimeClient, initFuntimeClient, setFuntimeClient, getFuntimeClient } from './api/client';
 export type { FuntimeClientConfig } from './api/client';
 
 // Types

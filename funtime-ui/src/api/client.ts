@@ -225,6 +225,26 @@ export class FuntimeClient {
       body: JSON.stringify({ subscriptionId, cancelAtPeriodEnd }),
     });
   }
+
+  async resumeSubscription(subscriptionId: number): Promise<Subscription> {
+    return this.request('/payments/subscriptions/resume', {
+      method: 'POST',
+      body: JSON.stringify({ subscriptionId }),
+    });
+  }
+
+  async createPaymentWithMethod(
+    paymentMethodId: string,
+    amountCents: number,
+    currency: string,
+    description?: string,
+    siteKey?: string
+  ): Promise<Payment> {
+    return this.request('/payments/charge', {
+      method: 'POST',
+      body: JSON.stringify({ paymentMethodId, amountCents, currency, description, siteKey }),
+    });
+  }
 }
 
 // Default singleton for simple usage
@@ -235,9 +255,12 @@ export function initFuntimeClient(config: FuntimeClientConfig): FuntimeClient {
   return defaultClient;
 }
 
+// Alias for initFuntimeClient (convenience)
+export const setFuntimeClient = initFuntimeClient;
+
 export function getFuntimeClient(): FuntimeClient {
   if (!defaultClient) {
-    throw new Error('FuntimeClient not initialized. Call initFuntimeClient first.');
+    throw new Error('FuntimeClient not initialized. Call initFuntimeClient or setFuntimeClient first.');
   }
   return defaultClient;
 }
