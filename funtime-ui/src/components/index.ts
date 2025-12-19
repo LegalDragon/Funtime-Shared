@@ -19,6 +19,10 @@ export type { SkillBadgeProps } from './SkillBadge';
 export { SiteBadge, SiteList } from './SiteBadge';
 export type { SiteBadgeProps, SiteListProps } from './SiteBadge';
 
+// Main Provider (API + Stripe combined)
+export { FuntimeProvider, useStripeKey } from './FuntimeProvider';
+export type { FuntimeProviderProps } from './FuntimeProvider';
+
 // Stripe/Payment Components
 export { StripeProvider, useStripeContext } from './StripeProvider';
 export type { StripeProviderProps } from './StripeProvider';

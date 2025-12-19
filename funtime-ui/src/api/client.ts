@@ -15,8 +15,16 @@ import type {
 
 export interface FuntimeClientConfig {
   baseUrl: string;
+  stripePublishableKey?: string;
   getToken?: () => string | null;
   onUnauthorized?: () => void;
+}
+
+// Store config globally for components to access
+let globalConfig: FuntimeClientConfig | null = null;
+
+export function getConfig(): FuntimeClientConfig | null {
+  return globalConfig;
 }
 
 export class FuntimeClient {
@@ -251,6 +259,7 @@ export class FuntimeClient {
 let defaultClient: FuntimeClient | null = null;
 
 export function initFuntimeClient(config: FuntimeClientConfig): FuntimeClient {
+  globalConfig = config;
   defaultClient = new FuntimeClient(config);
   return defaultClient;
 }
