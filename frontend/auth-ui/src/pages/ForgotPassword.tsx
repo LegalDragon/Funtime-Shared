@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone } from 'lucide-react';
 import { authApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey } from '../utils/redirect';
 
-type Step = 'phone' | 'code' | 'password' | 'success';
+type Step = 'input' | 'code' | 'password' | 'success';
+type RecoveryMode = 'email' | 'phone';
 
 export function ForgotPasswordPage() {
-  const [step, setStep] = useState<Step>('phone');
+  const [mode, setMode] = useState<RecoveryMode>('email');
+  const [step, setStep] = useState<Step>('input');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -21,13 +24,15 @@ export function ForgotPasswordPage() {
   const siteKey = getSiteKey();
   const siteName = getSiteDisplayName(siteKey);
 
+  const recoveryValue = mode === 'email' ? email : phoneNumber;
+
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await authApi.requestPasswordReset(phoneNumber);
+      const response = await authApi.requestPasswordReset(recoveryValue);
       if (response.success) {
         setStep('code');
       } else {
@@ -64,7 +69,7 @@ export function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const response = await authApi.resetPassword(phoneNumber, otpCode, newPassword);
+      const response = await authApi.resetPassword(recoveryValue, otpCode, newPassword);
       if (response.success) {
         setStep('success');
       } else {
@@ -75,6 +80,17 @@ export function ForgotPasswordPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleModeChange = (newMode: RecoveryMode) => {
+    setMode(newMode);
+    setError(null);
+  };
+
+  const handleBackToInput = () => {
+    setStep('input');
+    setOtpCode('');
+    setError(null);
   };
 
   return (
@@ -99,6 +115,34 @@ export function ForgotPasswordPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-soft p-8">
+          {/* Mode Toggle - only show on input step */}
+          {step === 'input' && (
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => handleModeChange('email')}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'email'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                Email
+              </button>
+              <button
+                onClick={() => handleModeChange('phone')}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'phone'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Phone className="w-4 h-4" />
+                Phone
+              </button>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -106,31 +150,48 @@ export function ForgotPasswordPage() {
             </div>
           )}
 
-          {/* Step 1: Enter Phone Number */}
-          {step === 'phone' && (
+          {/* Step 1: Enter Email or Phone */}
+          {step === 'input' && (
             <form onSubmit={handleSendCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
-                Enter your phone number and we'll send you a verification code to reset your password.
+                Enter your {mode === 'email' ? 'email address' : 'phone number'} and we'll send you a verification code to reset your password.
               </p>
 
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
+              {mode === 'email' ? (
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={isLoading || !phoneNumber}
+                disabled={isLoading || !recoveryValue}
                 className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 {isLoading ? (
@@ -149,7 +210,7 @@ export function ForgotPasswordPage() {
           {step === 'code' && (
             <form onSubmit={handleVerifyCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
-                We sent a code to <strong>{phoneNumber}</strong>. Enter it below.
+                We sent a code to <strong>{recoveryValue}</strong>. Enter it below.
               </p>
 
               <div>
@@ -171,11 +232,11 @@ export function ForgotPasswordPage() {
               <div className="flex items-center justify-between text-sm">
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={handleBackToInput}
                   className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Change number
+                  Change {mode === 'email' ? 'email' : 'number'}
                 </button>
                 <button
                   type="button"
