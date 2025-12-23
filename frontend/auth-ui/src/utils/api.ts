@@ -70,19 +70,27 @@ export const authApi = {
     });
   },
 
-  // Request password reset (sends OTP)
-  async requestPasswordReset(phoneNumber: string): Promise<ApiResponse> {
-    return request('/auth/otp/send', {
+  // Request password reset (sends code via email or phone)
+  async requestPasswordReset(identifier: string, mode: 'email' | 'phone'): Promise<ApiResponse> {
+    const body = mode === 'email'
+      ? { email: identifier }
+      : { phoneNumber: identifier };
+
+    return request('/auth/password-reset/send', {
       method: 'POST',
-      body: JSON.stringify({ phoneNumber }),
+      body: JSON.stringify(body),
     });
   },
 
-  // Reset password with OTP
-  async resetPassword(phoneNumber: string, code: string, newPassword: string): Promise<ApiResponse> {
-    return request('/auth/reset-password', {
+  // Reset password with verification code
+  async resetPassword(identifier: string, mode: 'email' | 'phone', code: string, newPassword: string): Promise<ApiResponse> {
+    const body = mode === 'email'
+      ? { email: identifier, code, newPassword }
+      : { phoneNumber: identifier, code, newPassword };
+
+    return request('/auth/password-reset/verify', {
       method: 'POST',
-      body: JSON.stringify({ phoneNumber, code, newPassword }),
+      body: JSON.stringify(body),
     });
   },
 };

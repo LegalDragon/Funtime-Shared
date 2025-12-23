@@ -26,13 +26,13 @@ export function ForgotPasswordPage() {
 
   const recoveryValue = mode === 'email' ? email : phoneNumber;
 
-  const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendCode = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await authApi.requestPasswordReset(recoveryValue);
+      const response = await authApi.requestPasswordReset(recoveryValue, mode);
       if (response.success) {
         setStep('code');
       } else {
@@ -69,7 +69,7 @@ export function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const response = await authApi.resetPassword(recoveryValue, otpCode, newPassword);
+      const response = await authApi.resetPassword(recoveryValue, mode, otpCode, newPassword);
       if (response.success) {
         setStep('success');
       } else {

@@ -257,3 +257,48 @@ public class ResetPasswordRequest
     [MaxLength(100)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+// Request password reset code (for email or phone)
+public class PasswordResetSendRequest
+{
+    /// <summary>
+    /// Email address for password reset
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Phone number for password reset (alternative to email)
+    /// </summary>
+    [Phone]
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
+}
+
+// Reset password with code (supports both email and phone)
+public class PasswordResetWithCodeRequest
+{
+    /// <summary>
+    /// Email address (if resetting via email)
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Phone number (if resetting via phone)
+    /// </summary>
+    [Phone]
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
+
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8)]
+    [MaxLength(100)]
+    public string NewPassword { get; set; } = string.Empty;
+}

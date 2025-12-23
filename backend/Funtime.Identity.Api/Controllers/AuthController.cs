@@ -797,6 +797,151 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Send password reset code via email or phone
+    /// </summary>
+    [HttpPost("password-reset/send")]
+    public async Task<ActionResult<ApiResponse>> SendPasswordResetCode([FromBody] PasswordResetSendRequest request)
+    {
+        // Validate that either email or phone is provided
+        if (string.IsNullOrEmpty(request.Email) && string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "Either email or phone number is required."
+            });
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            // Email-based password reset
+            var normalizedEmail = request.Email.ToLower();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+
+            if (user == null)
+            {
+                // Don't reveal that the email doesn't exist for security
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "If an account exists with this email, a reset code has been sent."
+                });
+            }
+
+            // Generate and store a reset code for email
+            var (success, message) = await _otpService.SendOtpAsync(normalizedEmail);
+
+            _logger.LogInformation("Password reset code requested for email: {Email}", normalizedEmail);
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "If an account exists with this email, a reset code has been sent."
+            });
+        }
+        else
+        {
+            // Phone-based password reset
+            var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber!);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhone);
+
+            if (user == null)
+            {
+                // Don't reveal that the phone doesn't exist for security
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "If an account exists with this phone number, a reset code has been sent."
+                });
+            }
+
+            var (success, message) = await _otpService.SendOtpAsync(normalizedPhone);
+
+            if (!success)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = message
+                });
+            }
+
+            _logger.LogInformation("Password reset code requested for phone: {Phone}", normalizedPhone);
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Reset code sent to your phone number."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Reset password using verification code (supports email or phone)
+    /// </summary>
+    [HttpPost("password-reset/verify")]
+    public async Task<ActionResult<ApiResponse>> ResetPasswordWithCode([FromBody] PasswordResetWithCodeRequest request)
+    {
+        // Validate that either email or phone is provided
+        if (string.IsNullOrEmpty(request.Email) && string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "Either email or phone number is required."
+            });
+        }
+
+        string identifier;
+        User? user;
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            identifier = request.Email.ToLower();
+            user = await _context.Users.FirstOrDefaultAsync(u => u.Email == identifier);
+        }
+        else
+        {
+            identifier = NormalizePhoneNumber(request.PhoneNumber!);
+            user = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier);
+        }
+
+        if (user == null)
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "Invalid reset code or account not found."
+            });
+        }
+
+        // Verify the code
+        var (success, message) = await _otpService.VerifyOtpAsync(identifier, request.Code);
+
+        if (!success)
+        {
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = message
+            });
+        }
+
+        // Update password
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Password reset successful for user {UserId}", user.Id);
+
+        return Ok(new ApiResponse
+        {
+            Success = true,
+            Message = "Password reset successfully. You can now login with your new password."
+        });
+    }
+
+    /// <summary>
     /// Reset password using phone OTP (for users who forgot their password)
     /// Call otp/send first to receive the OTP code
     /// </summary>
