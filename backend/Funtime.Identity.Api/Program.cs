@@ -80,14 +80,26 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS
+// CORS - configurable from appsettings.json
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("ConfiguredOrigins", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // Fallback for development if no origins configured
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
     });
 });
 
@@ -101,7 +113,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // CORS must be before other middleware
-app.UseCors("AllowAll");
+app.UseCors("ConfiguredOrigins");
 
 // Only use HTTPS redirection in production
 if (!app.Environment.IsDevelopment())
