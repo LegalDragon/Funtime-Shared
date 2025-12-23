@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import { authApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey } from '../utils/redirect';
 
@@ -9,6 +10,8 @@ export function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>('phone');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -75,12 +78,16 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
+      <div className="max-w-md w-full animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4">
-            <span className="text-white text-2xl font-bold">F</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
+            {step === 'success' ? (
+              <CheckCircle2 className="w-8 h-8 text-white" />
+            ) : (
+              <KeyRound className="w-8 h-8 text-white" />
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
             {step === 'success' ? 'Password Reset!' : 'Reset your password'}
@@ -91,7 +98,7 @@ export function ForgotPasswordPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-2xl shadow-soft p-8">
           {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -101,7 +108,7 @@ export function ForgotPasswordPage() {
 
           {/* Step 1: Enter Phone Number */}
           {step === 'phone' && (
-            <form onSubmit={handleSendCode} className="space-y-4">
+            <form onSubmit={handleSendCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
                 Enter your phone number and we'll send you a verification code to reset your password.
               </p>
@@ -116,7 +123,7 @@ export function ForgotPasswordPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -124,16 +131,23 @@ export function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading || !phoneNumber}
-                className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                {isLoading ? 'Sending...' : 'Send Code'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Send Code'
+                )}
               </button>
             </form>
           )}
 
           {/* Step 2: Enter Verification Code */}
           {step === 'code' && (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
+            <form onSubmit={handleVerifyCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
                 We sent a code to <strong>{phoneNumber}</strong>. Enter it below.
               </p>
@@ -149,7 +163,7 @@ export function ForgotPasswordPage() {
                   onChange={(e) => setOtpCode(e.target.value)}
                   required
                   maxLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-lg tracking-widest"
+                  className="w-full appearance-none block px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-center text-lg tracking-widest transition-colors"
                   placeholder="000000"
                 />
               </div>
@@ -158,15 +172,16 @@ export function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setStep('phone')}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
+                  <ArrowLeft className="w-4 h-4" />
                   Change number
                 </button>
                 <button
                   type="button"
                   onClick={handleSendCode}
                   disabled={isLoading}
-                  className="text-green-600 hover:text-green-700"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Resend code
                 </button>
@@ -175,7 +190,7 @@ export function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={otpCode.length < 6}
-                className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 Verify Code
               </button>
@@ -184,7 +199,7 @@ export function ForgotPasswordPage() {
 
           {/* Step 3: Enter New Password */}
           {step === 'password' && (
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            <form onSubmit={handleResetPassword} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
                 Enter your new password below.
               </p>
@@ -193,16 +208,25 @@ export function ForgotPasswordPage() {
                 <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
                   New Password
                 </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
                 <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
               </div>
 
@@ -210,23 +234,39 @@ export function ForgotPasswordPage() {
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                {isLoading ? 'Resetting...' : 'Reset Password'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  'Reset Password'
+                )}
               </button>
             </form>
           )}
@@ -234,17 +274,15 @@ export function ForgotPasswordPage() {
           {/* Step 4: Success */}
           {step === 'success' && (
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                <CheckCircle2 className="w-8 h-8 text-primary-600" />
               </div>
               <p className="text-gray-600 mb-6">
                 Your password has been reset successfully. You can now sign in with your new password.
               </p>
               <Link
                 to={`/login${window.location.search}`}
-                className="inline-block w-full py-2 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors text-center"
+                className="inline-flex justify-center items-center gap-2 w-full py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all shadow-sm"
               >
                 Sign In
               </Link>
@@ -258,7 +296,7 @@ export function ForgotPasswordPage() {
             Remember your password?{' '}
             <Link
               to={`/login${window.location.search}`}
-              className="text-green-600 hover:text-green-700 font-medium"
+              className="text-primary-600 hover:text-primary-700 font-medium"
             >
               Sign in
             </Link>
