@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
 import { authApi } from '../utils/api';
-import { getSiteDisplayName, getSiteKey, redirectWithToken } from '../utils/redirect';
+import { getSiteDisplayName, getSiteKey, redirectWithToken, getRedirectUrl } from '../utils/redirect';
 
-type Step = 'input' | 'code' | 'password' | 'create-account' | 'success';
+type Step = 'input' | 'code' | 'password' | 'create-account' | 'success' | 'account-created';
 type RecoveryMode = 'email' | 'phone';
 
 export function ForgotPasswordPage() {
@@ -90,9 +90,17 @@ export function ForgotPasswordPage() {
     try {
       const response = await authApi.quickRegister(recoveryValue, mode, otpCode, newPassword);
       if (response.success && response.token) {
-        // Store token and redirect to site
+        // Store token
         localStorage.setItem('auth_token', response.token);
-        redirectWithToken(response.token);
+
+        // Check if there's a redirect URL
+        const redirectUrl = getRedirectUrl();
+        if (redirectUrl) {
+          redirectWithToken(response.token);
+        } else {
+          // No redirect URL, show success message
+          setStep('account-created');
+        }
       } else {
         setError(response.message || 'Failed to create account');
       }
@@ -150,7 +158,7 @@ export function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
-            {step === 'success' ? (
+            {step === 'success' || step === 'account-created' ? (
               <CheckCircle2 className="w-8 h-8 text-white" />
             ) : step === 'create-account' ? (
               <UserPlus className="w-8 h-8 text-white" />
@@ -159,9 +167,9 @@ export function ForgotPasswordPage() {
             )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'success' ? 'Password Reset!' : step === 'create-account' ? 'Create Account' : 'Reset your password'}
+            {step === 'success' ? 'Password Reset!' : step === 'account-created' ? 'Welcome!' : step === 'create-account' ? 'Create Account' : 'Reset your password'}
           </h1>
-          {step !== 'success' && (
+          {step !== 'success' && step !== 'account-created' && (
             <p className="text-sm text-gray-500 mt-1">{siteName}</p>
           )}
         </div>
@@ -485,7 +493,7 @@ export function ForgotPasswordPage() {
             </form>
           )}
 
-          {/* Step 4: Success */}
+          {/* Step 4: Success (Password Reset) */}
           {step === 'success' && (
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
@@ -502,10 +510,29 @@ export function ForgotPasswordPage() {
               </Link>
             </div>
           )}
+
+          {/* Step 5: Account Created Success */}
+          {step === 'account-created' && (
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                <CheckCircle2 className="w-8 h-8 text-primary-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Created!</h2>
+              <p className="text-gray-600 mb-6">
+                Your account has been created successfully. You are now logged in.
+              </p>
+              <Link
+                to={`/login${window.location.search}`}
+                className="inline-flex justify-center items-center gap-2 w-full py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all shadow-sm"
+              >
+                Continue
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Back to Login Link */}
-        {step !== 'success' && (
+        {step !== 'success' && step !== 'account-created' && (
           <p className="mt-6 text-center text-sm text-gray-600">
             Remember your password?{' '}
             <Link
