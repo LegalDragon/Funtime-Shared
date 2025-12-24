@@ -271,8 +271,7 @@ public class PasswordResetSendRequest
     /// <summary>
     /// Phone number for password reset (alternative to email)
     /// </summary>
-    [Phone]
-    [MaxLength(20)]
+    [MaxLength(30)]
     public string? PhoneNumber { get; set; }
 }
 
@@ -289,8 +288,7 @@ public class PasswordResetWithCodeRequest
     /// <summary>
     /// Phone number (if resetting via phone)
     /// </summary>
-    [Phone]
-    [MaxLength(20)]
+    [MaxLength(30)]
     public string? PhoneNumber { get; set; }
 
     [Required]
