@@ -133,7 +133,7 @@ public class OtpService : IOtpService
         }
     }
 
-    public async Task<(bool success, string message, int? userId)> VerifyOtpAsync(string identifier, string code)
+    public async Task<(bool success, string message, int? userId)> VerifyOtpAsync(string identifier, string code, bool markAsUsed = true)
     {
         var otpRequest = await _context.OtpRequests
             .Where(o => o.Identifier == identifier &&
@@ -166,9 +166,12 @@ public class OtpService : IOtpService
             return (false, "Invalid OTP.", null);
         }
 
-        // Mark OTP as used
-        otpRequest.IsUsed = true;
-        await _context.SaveChangesAsync();
+        // Mark OTP as used if requested
+        if (markAsUsed)
+        {
+            otpRequest.IsUsed = true;
+            await _context.SaveChangesAsync();
+        }
 
         // Return the matched user ID (null if no existing user)
         return (true, "OTP verified successfully.", otpRequest.UserId);

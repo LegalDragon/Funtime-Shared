@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
 import { authApi } from '../utils/api';
-import { getSiteDisplayName, getSiteKey } from '../utils/redirect';
+import { getSiteDisplayName, getSiteKey, getSiteRedirectUrl } from '../utils/redirect';
 
-type Step = 'input' | 'code' | 'password' | 'success';
+type Step = 'input' | 'code' | 'password' | 'create-account' | 'success';
 type RecoveryMode = 'email' | 'phone';
 
 export function ForgotPasswordPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<RecoveryMode>('email');
   const [step, setStep] = useState<Step>('input');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [accountExists, setAccountExists] = useState(true);
 
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -47,9 +49,60 @@ export function ForgotPasswordPage() {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just move to password step
-    // In production, you might want to verify the code first
-    setStep('password');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await authApi.verifyPasswordResetCode(recoveryValue, mode, otpCode);
+      if (response.success) {
+        setAccountExists(response.accountExists);
+        if (response.accountExists) {
+          setStep('password');
+        } else {
+          // No account found - offer to create one
+          setStep('create-account');
+        }
+      } else {
+        setError(response.message || 'Invalid code');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to verify code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await authApi.quickRegister(recoveryValue, mode, otpCode, newPassword);
+      if (response.success && response.token) {
+        // Store token and redirect to site
+        localStorage.setItem('auth_token', response.token);
+        const redirectUrl = getSiteRedirectUrl(siteKey, response.token);
+        window.location.href = redirectUrl;
+      } else {
+        setError(response.message || 'Failed to create account');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create account');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -101,12 +154,14 @@ export function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
             {step === 'success' ? (
               <CheckCircle2 className="w-8 h-8 text-white" />
+            ) : step === 'create-account' ? (
+              <UserPlus className="w-8 h-8 text-white" />
             ) : (
               <KeyRound className="w-8 h-8 text-white" />
             )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'success' ? 'Password Reset!' : 'Reset your password'}
+            {step === 'success' ? 'Password Reset!' : step === 'create-account' ? 'Create Account' : 'Reset your password'}
           </h1>
           {step !== 'success' && (
             <p className="text-sm text-gray-500 mt-1">{siteName}</p>
@@ -328,6 +383,99 @@ export function ForgotPasswordPage() {
                 ) : (
                   'Reset Password'
                 )}
+              </button>
+            </form>
+          )}
+
+          {/* Step 3b: Create Account (no existing account found) */}
+          {step === 'create-account' && (
+            <form onSubmit={handleCreateAccount} className="space-y-5">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-3">
+                  <UserPlus className="w-6 h-6 text-primary-600" />
+                </div>
+                <p className="text-sm text-gray-600">
+                  No account found with this {mode === 'email' ? 'email' : 'phone number'}.
+                  <br />
+                  <strong>Create one now?</strong>
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Create Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="Create a password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="Confirm your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-5 h-5" />
+                    Create Account
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBackToInput}
+                className="w-full text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Try a different {mode === 'email' ? 'email' : 'phone number'}
               </button>
             </form>
           )}

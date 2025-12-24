@@ -18,6 +18,12 @@ interface AuthResponse {
   };
 }
 
+interface PasswordResetVerifyResponse {
+  success: boolean;
+  message?: string;
+  accountExists: boolean;
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -82,13 +88,37 @@ export const authApi = {
     });
   },
 
-  // Reset password with verification code
+  // Verify password reset code (returns whether account exists)
+  async verifyPasswordResetCode(identifier: string, mode: 'email' | 'phone', code: string): Promise<PasswordResetVerifyResponse> {
+    const body = mode === 'email'
+      ? { email: identifier, code }
+      : { phoneNumber: identifier, code };
+
+    return request('/auth/password-reset/verify', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  // Complete password reset with verification code
   async resetPassword(identifier: string, mode: 'email' | 'phone', code: string, newPassword: string): Promise<ApiResponse> {
     const body = mode === 'email'
       ? { email: identifier, code, newPassword }
       : { phoneNumber: identifier, code, newPassword };
 
-    return request('/auth/password-reset/verify', {
+    return request('/auth/password-reset/complete', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  // Quick register (create account with verified OTP)
+  async quickRegister(identifier: string, mode: 'email' | 'phone', code: string, password: string): Promise<AuthResponse> {
+    const body = mode === 'email'
+      ? { email: identifier, code, password }
+      : { phoneNumber: identifier, code, password };
+
+    return request('/auth/password-reset/register', {
       method: 'POST',
       body: JSON.stringify(body),
     });

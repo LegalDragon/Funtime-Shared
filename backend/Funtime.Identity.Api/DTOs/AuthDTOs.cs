@@ -275,6 +275,35 @@ public class PasswordResetSendRequest
     public string? PhoneNumber { get; set; }
 }
 
+// Verify OTP code only (for password reset flow)
+public class PasswordResetVerifyRequest
+{
+    /// <summary>
+    /// Email address (if verifying via email)
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Phone number (if verifying via phone)
+    /// </summary>
+    [MaxLength(30)]
+    public string? PhoneNumber { get; set; }
+
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+}
+
+// Response for password reset verify
+public class PasswordResetVerifyResponse
+{
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public bool AccountExists { get; set; }
+}
+
 // Reset password with code (supports both email and phone)
 public class PasswordResetWithCodeRequest
 {
@@ -299,4 +328,30 @@ public class PasswordResetWithCodeRequest
     [MinLength(8)]
     [MaxLength(100)]
     public string NewPassword { get; set; } = string.Empty;
+}
+
+// Quick registration request (after OTP verification with no existing account)
+public class PasswordResetRegisterRequest
+{
+    /// <summary>
+    /// Email address (if registering via email)
+    /// </summary>
+    [EmailAddress]
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Phone number (if registering via phone)
+    /// </summary>
+    [MaxLength(30)]
+    public string? PhoneNumber { get; set; }
+
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8)]
+    [MaxLength(100)]
+    public string Password { get; set; } = string.Empty;
 }

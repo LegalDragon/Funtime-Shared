@@ -857,10 +857,58 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Reset password using verification code (supports email or phone)
+    /// Verify OTP code for password reset (check if account exists)
     /// </summary>
     [HttpPost("password-reset/verify")]
-    public async Task<ActionResult<ApiResponse>> ResetPasswordWithCode([FromBody] PasswordResetWithCodeRequest request)
+    public async Task<ActionResult<PasswordResetVerifyResponse>> VerifyPasswordResetCode([FromBody] PasswordResetVerifyRequest request)
+    {
+        // Validate that either email or phone is provided
+        if (string.IsNullOrEmpty(request.Email) && string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            return BadRequest(new PasswordResetVerifyResponse
+            {
+                Success = false,
+                Message = "Either email or phone number is required.",
+                AccountExists = false
+            });
+        }
+
+        // Normalize the identifier
+        string identifier = !string.IsNullOrEmpty(request.Email)
+            ? request.Email.ToLower()
+            : NormalizePhoneNumber(request.PhoneNumber!);
+
+        // Verify the code but don't mark as used yet (markAsUsed: false)
+        // This allows the user to complete password reset or register
+        var (success, message, matchedUserId) = await _otpService.VerifyOtpAsync(identifier, request.Code, markAsUsed: false);
+
+        if (!success)
+        {
+            return BadRequest(new PasswordResetVerifyResponse
+            {
+                Success = false,
+                Message = message,
+                AccountExists = false
+            });
+        }
+
+        _logger.LogInformation("OTP verified for {Identifier}, account exists: {AccountExists}", identifier, matchedUserId.HasValue);
+
+        return Ok(new PasswordResetVerifyResponse
+        {
+            Success = true,
+            Message = matchedUserId.HasValue
+                ? "Code verified. You can now reset your password."
+                : "Code verified. No account found - you can create one.",
+            AccountExists = matchedUserId.HasValue
+        });
+    }
+
+    /// <summary>
+    /// Complete password reset with verified code
+    /// </summary>
+    [HttpPost("password-reset/complete")]
+    public async Task<ActionResult<ApiResponse>> CompletePasswordReset([FromBody] PasswordResetWithCodeRequest request)
     {
         // Validate that either email or phone is provided
         if (string.IsNullOrEmpty(request.Email) && string.IsNullOrEmpty(request.PhoneNumber))
@@ -877,8 +925,8 @@ public class AuthController : ControllerBase
             ? request.Email.ToLower()
             : NormalizePhoneNumber(request.PhoneNumber!);
 
-        // Verify the code and get matched user ID
-        var (success, message, matchedUserId) = await _otpService.VerifyOtpAsync(identifier, request.Code);
+        // Verify the code and mark as used
+        var (success, message, matchedUserId) = await _otpService.VerifyOtpAsync(identifier, request.Code, markAsUsed: true);
 
         if (!success)
         {
@@ -889,7 +937,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        // For password reset, user must exist (unlike OTP login which can create accounts)
+        // For password reset, user must exist
         if (!matchedUserId.HasValue)
         {
             return BadRequest(new ApiResponse
@@ -920,6 +968,85 @@ public class AuthController : ControllerBase
         {
             Success = true,
             Message = "Password reset successfully. You can now login with your new password."
+        });
+    }
+
+    /// <summary>
+    /// Quick registration with verified OTP (for users with no existing account)
+    /// </summary>
+    [HttpPost("password-reset/register")]
+    public async Task<ActionResult<AuthResponse>> QuickRegister([FromBody] PasswordResetRegisterRequest request)
+    {
+        // Validate that either email or phone is provided
+        if (string.IsNullOrEmpty(request.Email) && string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "Either email or phone number is required."
+            });
+        }
+
+        // Normalize the identifier
+        string identifier = !string.IsNullOrEmpty(request.Email)
+            ? request.Email.ToLower()
+            : NormalizePhoneNumber(request.PhoneNumber!);
+
+        // Verify the code and mark as used
+        var (success, message, matchedUserId) = await _otpService.VerifyOtpAsync(identifier, request.Code, markAsUsed: true);
+
+        if (!success)
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = message
+            });
+        }
+
+        // If account already exists, they should use password reset instead
+        if (matchedUserId.HasValue)
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "An account already exists with this email or phone number. Please use password reset."
+            });
+        }
+
+        // Create new user
+        var user = new User
+        {
+            CreatedAt = DateTime.UtcNow,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
+        };
+
+        // Set email or phone based on what was provided
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            user.Email = request.Email.ToLower();
+            user.IsEmailVerified = true;  // Verified via OTP
+        }
+        else
+        {
+            user.PhoneNumber = NormalizePhoneNumber(request.PhoneNumber!);
+            user.IsPhoneVerified = true;  // Verified via OTP
+        }
+
+        _context.Users.Add(user);
+        user.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var token = _jwtService.GenerateToken(user);
+
+        _logger.LogInformation("Quick registration successful for {Identifier}", identifier);
+
+        return Ok(new AuthResponse
+        {
+            Success = true,
+            Token = token,
+            Message = "Account created successfully.",
+            User = MapToUserResponse(user)
         });
     }
 
