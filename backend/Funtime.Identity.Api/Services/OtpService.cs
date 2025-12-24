@@ -74,6 +74,19 @@ public class OtpService : IOtpService
         var code = GenerateOtp();
         var expiresAt = DateTime.UtcNow.AddMinutes(OTP_EXPIRATION_MINUTES);
 
+        // Look up existing user by email or phone (don't reveal if found)
+        int? matchedUserId = null;
+        if (IsEmail(identifier))
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == identifier.ToLower());
+            matchedUserId = user?.Id;
+        }
+        else
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier);
+            matchedUserId = user?.Id;
+        }
+
         // Invalidate previous unused OTPs for this identifier
         var previousOtps = await _context.OtpRequests
             .Where(o => o.Identifier == identifier && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
@@ -84,10 +97,11 @@ public class OtpService : IOtpService
             otp.IsUsed = true;
         }
 
-        // Create new OTP request
+        // Create new OTP request with matched user ID
         var otpRequest = new OtpRequest
         {
             Identifier = identifier,
+            UserId = matchedUserId,
             Code = code,
             ExpiresAt = expiresAt,
             CreatedAt = DateTime.UtcNow
@@ -126,7 +140,7 @@ public class OtpService : IOtpService
         return (true, "OTP sent successfully.");
     }
 
-    public async Task<(bool success, string message)> VerifyOtpAsync(string identifier, string code)
+    public async Task<(bool success, string message, int? userId)> VerifyOtpAsync(string identifier, string code)
     {
         var otpRequest = await _context.OtpRequests
             .Where(o => o.Identifier == identifier &&
@@ -148,22 +162,23 @@ public class OtpService : IOtpService
             {
                 if (existingOtp.IsUsed)
                 {
-                    return (false, "This OTP has already been used.");
+                    return (false, "This OTP has already been used.", null);
                 }
                 if (existingOtp.ExpiresAt <= DateTime.UtcNow)
                 {
-                    return (false, "This OTP has expired.");
+                    return (false, "This OTP has expired.", null);
                 }
             }
 
-            return (false, "Invalid OTP.");
+            return (false, "Invalid OTP.", null);
         }
 
         // Mark OTP as used
         otpRequest.IsUsed = true;
         await _context.SaveChangesAsync();
 
-        return (true, "OTP verified successfully.");
+        // Return the matched user ID (null if no existing user)
+        return (true, "OTP verified successfully.", otpRequest.UserId);
     }
 
     private async Task UpdateRateLimitAsync(string identifier)

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Funtime.Identity.Api.Models;
 
@@ -13,6 +14,14 @@ public class OtpRequest
     [Required]
     [MaxLength(255)]
     public string Identifier { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The matched user ID if a user exists with this identifier (null if no match)
+    /// </summary>
+    public int? UserId { get; set; }
+
+    [ForeignKey("UserId")]
+    public User? User { get; set; }
 
     [Required]
     [MaxLength(6)]

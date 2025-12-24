@@ -154,7 +154,7 @@ public class AuthController : ControllerBase
     {
         var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
 
-        var (success, message) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
+        var (success, message, matchedUserId) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
 
         if (!success)
         {
@@ -165,13 +165,24 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Find or create user by phone number
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhone);
-
-        if (user == null)
+        User user;
+        if (matchedUserId.HasValue)
         {
-            // Create new user with phone number only
+            // Existing user found during OTP send
+            user = await _context.Users.FindAsync(matchedUserId.Value);
+            if (user == null)
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Success = false,
+                    Message = "User not found."
+                });
+            }
+            user.IsPhoneVerified = true;
+        }
+        else
+        {
+            // No existing user - create new account
             user = new User
             {
                 PhoneNumber = normalizedPhone,
@@ -179,10 +190,6 @@ public class AuthController : ControllerBase
                 CreatedAt = DateTime.UtcNow
             };
             _context.Users.Add(user);
-        }
-        else
-        {
-            user.IsPhoneVerified = true;
         }
 
         user.LastLoginAt = DateTime.UtcNow;
@@ -196,7 +203,7 @@ public class AuthController : ControllerBase
         {
             Success = true,
             Token = token,
-            Message = "OTP verification successful.",
+            Message = matchedUserId.HasValue ? "Login successful." : "Account created successfully.",
             User = MapToUserResponse(user)
         });
     }
@@ -234,8 +241,8 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Verify OTP
-        var (success, message) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
+        // Verify OTP (ignore matchedUserId since user is already authenticated)
+        var (success, message, _) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
 
         if (!success)
         {
@@ -915,8 +922,8 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Verify the code
-        var (success, message) = await _otpService.VerifyOtpAsync(identifier, request.Code);
+        // Verify the code (ignore matchedUserId, we already have the user)
+        var (success, message, _) = await _otpService.VerifyOtpAsync(identifier, request.Code);
 
         if (!success)
         {
@@ -950,8 +957,8 @@ public class AuthController : ControllerBase
     {
         var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
 
-        // Verify OTP
-        var (success, message) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
+        // Verify OTP (ignore matchedUserId, we look up user separately)
+        var (success, message, _) = await _otpService.VerifyOtpAsync(normalizedPhone, request.Code);
 
         if (!success)
         {
