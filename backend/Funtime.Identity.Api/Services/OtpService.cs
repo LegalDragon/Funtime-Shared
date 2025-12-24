@@ -114,30 +114,23 @@ public class OtpService : IOtpService
 
         await _context.SaveChangesAsync();
 
-        // Determine if this is an email or phone and send accordingly
-        bool sent;
-        if (IsEmail(identifier))
+        // Call stored procedure to queue notification (external process handles delivery)
+        var isEmail = IsEmail(identifier);
+        try
         {
-            sent = await _emailService.SendEmailAsync(
-                identifier,
-                "Your Funtime Pickleball Verification Code",
-                $"Your verification code is: {code}. It expires in {OTP_EXPIRATION_MINUTES} minutes.");
-        }
-        else
-        {
-            sent = await _smsService.SendSmsAsync(
-                identifier,
-                $"Your Funtime Pickleball verification code is: {code}. It expires in {OTP_EXPIRATION_MINUTES} minutes.");
-        }
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC nsp_Password_Reset_Request @OtpRequestId = {0}, @IsEmail = {1}",
+                otpRequest.Id,
+                isEmail);
 
-        if (!sent)
+            _logger.LogInformation("Password reset request queued for {Identifier} (IsEmail: {IsEmail})", identifier, isEmail);
+            return (true, "OTP sent successfully.");
+        }
+        catch (Exception ex)
         {
-            _logger.LogError("Failed to send OTP to {Identifier}", identifier);
+            _logger.LogError(ex, "Failed to queue password reset request for {Identifier}", identifier);
             return (false, "Failed to send OTP. Please try again.");
         }
-
-        _logger.LogInformation("OTP sent successfully to {Identifier}", identifier);
-        return (true, "OTP sent successfully.");
     }
 
     public async Task<(bool success, string message, int? userId)> VerifyOtpAsync(string identifier, string code)
