@@ -39,7 +39,7 @@ public class NotificationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get mail profiles");
-            return StatusCode(500, new { message = "Failed to get mail profiles. Check database connection." });
+            return StatusCode(500, new { message = $"Failed to get mail profiles: {ex.Message}" });
         }
     }
 
@@ -195,14 +195,12 @@ public class NotificationController : ControllerBase
         {
             using var conn = CreateConnection();
             var result = await conn.QuerySingleOrDefaultAsync<EmailTemplateRow>(
-                "exec dbo.csp_Email_Templates_AddNew @ET_Code, @Lang_Code, @Subject, @Body, @App_Code",
+                "exec dbo.csp_Email_Templates_AddNew @ET_Code, @Subject, @Body",
                 new
                 {
                     template.ET_Code,
-                    template.Lang_Code,
                     template.Subject,
-                    template.Body,
-                    template.App_Code
+                    template.Body
                 });
             _logger.LogInformation("Template {Code} created", template.ET_Code);
             return result ?? template;
@@ -210,7 +208,7 @@ public class NotificationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create template");
-            return StatusCode(500, new { message = "Failed to create template" });
+            return StatusCode(500, new { message = $"Failed to create template: {ex.Message}" });
         }
     }
 
@@ -221,15 +219,13 @@ public class NotificationController : ControllerBase
         {
             using var conn = CreateConnection();
             await conn.ExecuteAsync(
-                "exec dbo.csp_Email_Templates_Update @ET_ID, @ET_Code, @Lang_Code, @Subject, @Body, @App_Code",
+                "exec dbo.csp_Email_Templates_Update @ET_ID, @ET_Code, @Subject, @Body",
                 new
                 {
                     ET_ID = id,
                     template.ET_Code,
-                    template.Lang_Code,
                     template.Subject,
-                    template.Body,
-                    template.App_Code
+                    template.Body
                 });
             _logger.LogInformation("Template {Id} updated", id);
             template.ET_ID = id;
@@ -238,7 +234,7 @@ public class NotificationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update template {Id}", id);
-            return StatusCode(500, new { message = "Failed to update template" });
+            return StatusCode(500, new { message = $"Failed to update template: {ex.Message}" });
         }
     }
 
