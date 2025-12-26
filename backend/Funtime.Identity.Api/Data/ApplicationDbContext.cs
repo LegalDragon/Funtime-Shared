@@ -15,6 +15,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<OtpRateLimit> OtpRateLimits { get; set; }
     public DbSet<ExternalLogin> ExternalLogins { get; set; }
 
+    // Site tables
+    public DbSet<Site> Sites { get; set; }
+
     // Profile tables
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<UserSite> UserSites { get; set; }

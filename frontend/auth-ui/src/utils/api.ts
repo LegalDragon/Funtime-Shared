@@ -125,3 +125,192 @@ export const authApi = {
     });
   },
 };
+
+// Admin types
+export interface Site {
+  key: string;
+  name: string;
+  description?: string;
+  url?: string;
+  isActive: boolean;
+  requiresSubscription: boolean;
+  monthlyPriceCents?: number;
+  yearlyPriceCents?: number;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdminUser {
+  id: number;
+  email?: string;
+  phoneNumber?: string;
+  systemRole?: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
+export interface AdminUserList {
+  users: AdminUser[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface UserSiteInfo {
+  siteKey: string;
+  role: string;
+  isActive: boolean;
+  joinedAt: string;
+}
+
+export interface SubscriptionInfo {
+  id: number;
+  siteKey?: string;
+  planName?: string;
+  status: string;
+  amountCents?: number;
+  interval?: string;
+  currentPeriodEnd?: string;
+}
+
+export interface PaymentInfo {
+  id: number;
+  amountCents: number;
+  currency: string;
+  status: string;
+  description?: string;
+  siteKey?: string;
+  createdAt: string;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  updatedAt?: string;
+  sites: UserSiteInfo[];
+  subscriptions: SubscriptionInfo[];
+  recentPayments: PaymentInfo[];
+}
+
+export interface AdminPayment {
+  id: number;
+  userId: number;
+  userEmail?: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  description?: string;
+  siteKey?: string;
+  createdAt: string;
+}
+
+export interface AdminPaymentList {
+  payments: AdminPayment[];
+  totalCount: number;
+  totalAmountCents: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  newUsersThisMonth: number;
+  activeSubscriptions: number;
+  revenueThisMonthCents: number;
+  totalSites: number;
+  activeSites: number;
+}
+
+// Helper to get auth header
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// Admin API methods
+export const adminApi = {
+  // Stats
+  async getStats(): Promise<AdminStats> {
+    return request('/admin/stats', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Sites
+  async getSites(): Promise<Site[]> {
+    return request('/admin/sites', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async createSite(site: Omit<Site, 'createdAt' | 'updatedAt'>): Promise<Site> {
+    return request('/admin/sites', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(site),
+    });
+  },
+
+  async updateSite(key: string, updates: Partial<Site>): Promise<Site> {
+    return request(`/admin/sites/${key}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // Users
+  async searchUsers(search?: string, page = 1, pageSize = 20): Promise<AdminUserList> {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    params.set('page', page.toString());
+    params.set('pageSize', pageSize.toString());
+
+    return request(`/admin/users?${params}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async getUser(id: number): Promise<AdminUserDetail> {
+    return request(`/admin/users/${id}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async updateUser(id: number, updates: Partial<AdminUser>): Promise<AdminUser> {
+    return request(`/admin/users/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // Payments
+  async getPayments(filters?: {
+    userId?: number;
+    siteKey?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<AdminPaymentList> {
+    const params = new URLSearchParams();
+    if (filters?.userId) params.set('userId', filters.userId.toString());
+    if (filters?.siteKey) params.set('siteKey', filters.siteKey);
+    if (filters?.status) params.set('status', filters.status);
+    if (filters?.fromDate) params.set('fromDate', filters.fromDate);
+    if (filters?.toDate) params.set('toDate', filters.toDate);
+    params.set('page', (filters?.page || 1).toString());
+    params.set('pageSize', (filters?.pageSize || 20).toString());
+
+    return request(`/admin/payments?${params}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+};
