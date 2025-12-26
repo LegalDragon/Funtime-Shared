@@ -433,3 +433,300 @@ export const assetApi = {
     }
   },
 };
+
+// Notification types
+export interface MailProfile {
+  id: number;
+  name: string;
+  smtpHost: string;
+  smtpPort: number;
+  username?: string;
+  password?: string;
+  fromEmail: string;
+  fromName?: string;
+  securityMode: string;
+  isActive: boolean;
+  siteKey?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface NotificationTemplate {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  language: string;
+  subject?: string;
+  body: string;
+  bodyText?: string;
+  siteKey?: string;
+  isActive: boolean;
+  description?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface NotificationTask {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  priority: string;
+  mailProfileId?: number;
+  mailProfileName?: string;
+  templateId?: number;
+  templateCode?: string;
+  siteKey?: string;
+  defaultRecipients?: string;
+  ccRecipients?: string;
+  bccRecipients?: string;
+  testEmail?: string;
+  maxRetries: number;
+  description?: string;
+  createdAt: string;
+}
+
+export interface NotificationOutbox {
+  id: number;
+  taskId?: number;
+  type: string;
+  toList: string;
+  ccList?: string;
+  bccList?: string;
+  fromEmail?: string;
+  fromName?: string;
+  subject?: string;
+  bodyHtml?: string;
+  bodyText?: string;
+  status: string;
+  priority: string;
+  attempts: number;
+  maxAttempts: number;
+  lastError?: string;
+  scheduledAt?: string;
+  nextRetryAt?: string;
+  siteKey?: string;
+  userId?: number;
+  createdAt: string;
+}
+
+export interface NotificationHistory {
+  id: number;
+  outboxId?: number;
+  taskId?: number;
+  type: string;
+  toList: string;
+  fromEmail?: string;
+  subject?: string;
+  status: string;
+  attempts: number;
+  externalId?: string;
+  errorMessage?: string;
+  siteKey?: string;
+  userId?: number;
+  sentAt: string;
+  deliveredAt?: string;
+  createdAt: string;
+}
+
+export interface NotificationStats {
+  totalProfiles: number;
+  activeProfiles: number;
+  totalTemplates: number;
+  totalTasks: number;
+  activeTasks: number;
+  pendingMessages: number;
+  failedMessages: number;
+  sentToday: number;
+  sentThisWeek: number;
+}
+
+export interface OutboxListResponse {
+  items: NotificationOutbox[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface HistoryListResponse {
+  items: NotificationHistory[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// Notification API methods
+export const notificationApi = {
+  // Stats
+  async getStats(): Promise<NotificationStats> {
+    return request('/admin/notifications/stats', { headers: getAuthHeaders() });
+  },
+
+  // Mail Profiles
+  async getProfiles(siteKey?: string): Promise<MailProfile[]> {
+    const params = siteKey ? `?siteKey=${siteKey}` : '';
+    return request(`/admin/notifications/profiles${params}`, { headers: getAuthHeaders() });
+  },
+
+  async getProfile(id: number): Promise<MailProfile> {
+    return request(`/admin/notifications/profiles/${id}`, { headers: getAuthHeaders() });
+  },
+
+  async createProfile(profile: Omit<MailProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<MailProfile> {
+    return request('/admin/notifications/profiles', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profile),
+    });
+  },
+
+  async updateProfile(id: number, profile: Partial<MailProfile>): Promise<MailProfile> {
+    return request(`/admin/notifications/profiles/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profile),
+    });
+  },
+
+  async deleteProfile(id: number): Promise<void> {
+    return request(`/admin/notifications/profiles/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Templates
+  async getTemplates(siteKey?: string, type?: string): Promise<NotificationTemplate[]> {
+    const params = new URLSearchParams();
+    if (siteKey) params.set('siteKey', siteKey);
+    if (type) params.set('type', type);
+    const queryString = params.toString();
+    return request(`/admin/notifications/templates${queryString ? `?${queryString}` : ''}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async getTemplate(id: number): Promise<NotificationTemplate> {
+    return request(`/admin/notifications/templates/${id}`, { headers: getAuthHeaders() });
+  },
+
+  async createTemplate(template: Omit<NotificationTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<NotificationTemplate> {
+    return request('/admin/notifications/templates', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(template),
+    });
+  },
+
+  async updateTemplate(id: number, template: Partial<NotificationTemplate>): Promise<NotificationTemplate> {
+    return request(`/admin/notifications/templates/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(template),
+    });
+  },
+
+  async deleteTemplate(id: number): Promise<void> {
+    return request(`/admin/notifications/templates/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Tasks
+  async getTasks(siteKey?: string, status?: string): Promise<NotificationTask[]> {
+    const params = new URLSearchParams();
+    if (siteKey) params.set('siteKey', siteKey);
+    if (status) params.set('status', status);
+    const queryString = params.toString();
+    return request(`/admin/notifications/tasks${queryString ? `?${queryString}` : ''}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async getTask(id: number): Promise<NotificationTask> {
+    return request(`/admin/notifications/tasks/${id}`, { headers: getAuthHeaders() });
+  },
+
+  async createTask(task: Omit<NotificationTask, 'id' | 'createdAt' | 'mailProfileName' | 'templateCode'>): Promise<NotificationTask> {
+    return request('/admin/notifications/tasks', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(task),
+    });
+  },
+
+  async updateTask(id: number, task: Partial<NotificationTask>): Promise<NotificationTask> {
+    return request(`/admin/notifications/tasks/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(task),
+    });
+  },
+
+  async deleteTask(id: number): Promise<void> {
+    return request(`/admin/notifications/tasks/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Outbox
+  async getOutbox(options?: {
+    status?: string;
+    siteKey?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<OutboxListResponse> {
+    const params = new URLSearchParams();
+    if (options?.status) params.set('status', options.status);
+    if (options?.siteKey) params.set('siteKey', options.siteKey);
+    params.set('page', (options?.page || 1).toString());
+    params.set('pageSize', (options?.pageSize || 20).toString());
+    return request(`/admin/notifications/outbox?${params}`, { headers: getAuthHeaders() });
+  },
+
+  async retryOutbox(id: number): Promise<void> {
+    return request(`/admin/notifications/outbox/${id}/retry`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async deleteOutbox(id: number): Promise<void> {
+    return request(`/admin/notifications/outbox/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async clearFailedOutbox(): Promise<void> {
+    return request('/admin/notifications/outbox/clear-failed', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // History
+  async getHistory(options?: {
+    status?: string;
+    siteKey?: string;
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<HistoryListResponse> {
+    const params = new URLSearchParams();
+    if (options?.status) params.set('status', options.status);
+    if (options?.siteKey) params.set('siteKey', options.siteKey);
+    if (options?.fromDate) params.set('fromDate', options.fromDate);
+    if (options?.toDate) params.set('toDate', options.toDate);
+    params.set('page', (options?.page || 1).toString());
+    params.set('pageSize', (options?.pageSize || 20).toString());
+    return request(`/admin/notifications/history?${params}`, { headers: getAuthHeaders() });
+  },
+};

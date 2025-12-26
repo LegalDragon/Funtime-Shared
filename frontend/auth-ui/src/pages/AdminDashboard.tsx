@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2 } from 'lucide-react';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell } from 'lucide-react';
 import { adminApi, assetApi } from '../utils/api';
 import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse } from '../utils/api';
 import { AssetUploadModal } from '../components/AssetUploadModal';
+import { NotificationsTab } from '../components/NotificationsTab';
 
-type Tab = 'overview' | 'sites' | 'users' | 'payments';
+type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications';
 
 export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -262,6 +263,17 @@ export function AdminDashboardPage() {
           >
             <CreditCard className="w-4 h-4" />
             Payments
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'notifications'
+                ? 'bg-primary-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            Notifications
           </button>
         </div>
 
@@ -611,6 +623,9 @@ export function AdminDashboardPage() {
             )}
           </div>
         )}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && <NotificationsTab />}
 
         {/* Edit Site Modal */}
         {editingSite && (
