@@ -25,11 +25,19 @@ public class NotificationController : ControllerBase
     [HttpGet("profiles")]
     public async Task<ActionResult<List<MailProfile>>> GetMailProfiles([FromQuery] string? siteKey = null)
     {
-        var query = _context.MailProfiles.AsQueryable();
-        if (!string.IsNullOrEmpty(siteKey))
-            query = query.Where(p => p.SiteKey == siteKey || p.SiteKey == null);
+        try
+        {
+            var query = _context.MailProfiles.AsQueryable();
+            if (!string.IsNullOrEmpty(siteKey))
+                query = query.Where(p => p.SiteKey == siteKey || p.SiteKey == null);
 
-        return await query.OrderBy(p => p.Name).ToListAsync();
+            return await query.OrderBy(p => p.Name).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get mail profiles - database may not be configured");
+            return StatusCode(500, new { message = "Notification database not available. Please run the migration on fxEmail database." });
+        }
     }
 
     [HttpGet("profiles/{id}")]
@@ -385,22 +393,30 @@ public class NotificationController : ControllerBase
     [HttpGet("stats")]
     public async Task<ActionResult<NotificationStats>> GetStats()
     {
-        var now = DateTime.UtcNow;
-        var today = now.Date;
-        var thisWeek = today.AddDays(-(int)today.DayOfWeek);
-
-        return new NotificationStats
+        try
         {
-            TotalProfiles = await _context.MailProfiles.CountAsync(),
-            ActiveProfiles = await _context.MailProfiles.CountAsync(p => p.IsActive),
-            TotalTemplates = await _context.NotificationTemplates.CountAsync(),
-            TotalTasks = await _context.NotificationTasks.CountAsync(),
-            ActiveTasks = await _context.NotificationTasks.CountAsync(t => t.Status == "Active"),
-            PendingMessages = await _context.NotificationOutbox.CountAsync(o => o.Status == "Pending"),
-            FailedMessages = await _context.NotificationOutbox.CountAsync(o => o.Status == "Failed"),
-            SentToday = await _context.NotificationHistory.CountAsync(h => h.SentAt >= today),
-            SentThisWeek = await _context.NotificationHistory.CountAsync(h => h.SentAt >= thisWeek)
-        };
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var thisWeek = today.AddDays(-(int)today.DayOfWeek);
+
+            return new NotificationStats
+            {
+                TotalProfiles = await _context.MailProfiles.CountAsync(),
+                ActiveProfiles = await _context.MailProfiles.CountAsync(p => p.IsActive),
+                TotalTemplates = await _context.NotificationTemplates.CountAsync(),
+                TotalTasks = await _context.NotificationTasks.CountAsync(),
+                ActiveTasks = await _context.NotificationTasks.CountAsync(t => t.Status == "Active"),
+                PendingMessages = await _context.NotificationOutbox.CountAsync(o => o.Status == "Pending"),
+                FailedMessages = await _context.NotificationOutbox.CountAsync(o => o.Status == "Failed"),
+                SentToday = await _context.NotificationHistory.CountAsync(h => h.SentAt >= today),
+                SentThisWeek = await _context.NotificationHistory.CountAsync(h => h.SentAt >= thisWeek)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get notification stats - database may not be configured");
+            return StatusCode(500, new { message = "Notification database not available. Please run the migration on fxEmail database." });
+        }
     }
 
     #endregion
