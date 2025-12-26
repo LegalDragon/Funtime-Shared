@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { ExternalLink, LogOut } from 'lucide-react';
 
 // Available Funtime Pickleball sites

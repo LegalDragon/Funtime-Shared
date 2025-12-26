@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Plus, Edit2, X, Check, Loader2, TrendingUp } from 'lucide-react';
-import { adminApi, Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats } from '../utils/api';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp } from 'lucide-react';
+import { adminApi } from '../utils/api';
+import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats } from '../utils/api';
 
 type Tab = 'overview' | 'sites' | 'users' | 'payments';
 
@@ -15,7 +16,6 @@ export function AdminDashboardPage() {
   // Sites state
   const [sites, setSites] = useState<Site[]>([]);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
-  const [showAddSite, setShowAddSite] = useState(false);
 
   // Users state
   const [userSearch, setUserSearch] = useState('');
@@ -257,18 +257,9 @@ export function AdminDashboardPage() {
         {/* Sites Tab */}
         {activeTab === 'sites' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Available Sites</h2>
-                <p className="text-sm text-gray-500 mt-1">Configure and manage Funtime Pickleball sites</p>
-              </div>
-              <button
-                onClick={() => setShowAddSite(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add Site
-              </button>
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Available Sites</h2>
+              <p className="text-sm text-gray-500 mt-1">Configure and manage Funtime Pickleball sites</p>
             </div>
             {isLoading ? (
               <div className="p-8 text-center">

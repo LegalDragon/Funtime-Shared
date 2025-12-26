@@ -14,7 +14,6 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [accountExists, setAccountExists] = useState(true);
 
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -54,7 +53,6 @@ export function ForgotPasswordPage() {
     try {
       const response = await authApi.verifyPasswordResetCode(recoveryValue, mode, otpCode);
       if (response.success) {
-        setAccountExists(response.accountExists);
         if (response.accountExists) {
           setStep('password');
         } else {
