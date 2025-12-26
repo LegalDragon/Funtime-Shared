@@ -41,3 +41,20 @@ bin/
 #uploads
 uploads/
 upload/
+
+
+#visual studio code
+*.vscode/
+bin/
+obj/
+*.dll
+*.exe
+
+# .NET build artifacts
+**/obj/**
+**/bin/**
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.GeneratedMSBuildEditorConfig.editorconfig
+*.GlobalUsings.g.cs
+*.assets.cache

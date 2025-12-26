@@ -1,18 +1,18 @@
--- Create FTPBAuth Database
+-- Create FuntimeIdentity Database
 -- Run this script as a user with CREATE DATABASE permissions
 
 USE master;
 GO
 
 -- Create database if it doesn't exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'FTPBAuth')
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'FuntimeIdentity')
 BEGIN
-    CREATE DATABASE FTPBAuth;
+    CREATE DATABASE FuntimeIdentity;
 END
 GO
 
-USE FTPBAuth;
+USE FuntimeIdentity;
 GO
 
-PRINT 'Database FTPBAuth created successfully';
+PRINT 'Database FuntimeIdentity created successfully';
 GO

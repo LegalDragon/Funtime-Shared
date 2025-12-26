@@ -1,7 +1,7 @@
--- Create Tables for FTPBAuth
+-- Create Tables for FuntimeIdentity
 -- Run this script after creating the database
 
-USE FTPBAuth;
+USE FuntimeIdentity;
 GO
 
 -- Users Table
