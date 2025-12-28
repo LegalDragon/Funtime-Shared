@@ -52,7 +52,7 @@ export function SiteSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12 pt-20">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

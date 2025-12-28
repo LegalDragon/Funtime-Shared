@@ -151,7 +151,7 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12 pt-20">
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">

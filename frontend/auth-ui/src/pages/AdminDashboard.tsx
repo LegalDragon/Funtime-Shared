@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell } from 'lucide-react';
-import { adminApi, assetApi } from '../utils/api';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image } from 'lucide-react';
+import { adminApi, assetApi, settingsApi } from '../utils/api';
 import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse, AdminPaymentMethod } from '../utils/api';
 import { AssetUploadModal } from '../components/AssetUploadModal';
 import { NotificationsTab } from '../components/NotificationsTab';
@@ -10,7 +10,7 @@ import { config } from '../utils/config';
 // Stripe publishable key from runtime config
 const STRIPE_PUBLISHABLE_KEY = config.STRIPE_PUBLISHABLE_KEY;
 
-type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications';
+type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications' | 'settings';
 
 export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -59,6 +59,11 @@ export function AdminDashboardPage() {
   const [userPayments, setUserPayments] = useState<AdminPayment[]>([]);
   const [userPaymentsLoading, setUserPaymentsLoading] = useState(false);
 
+  // Settings state
+  const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
+  const [mainLogoLoading, setMainLogoLoading] = useState(false);
+  const [uploadingMainLogo, setUploadingMainLogo] = useState(false);
+
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     window.location.href = '/login';
@@ -73,7 +78,52 @@ export function AdminDashboardPage() {
   // Load data when tab changes
   useEffect(() => {
     if (activeTab === 'payments') loadPayments();
+    if (activeTab === 'settings') loadMainLogo();
   }, [activeTab]);
+
+  const loadMainLogo = async () => {
+    setMainLogoLoading(true);
+    try {
+      const response = await settingsApi.getMainLogo();
+      if (response.hasLogo && response.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(response.logoUrl));
+      } else {
+        setMainLogoUrl(null);
+      }
+    } catch (err) {
+      console.error('Failed to load main logo:', err);
+    } finally {
+      setMainLogoLoading(false);
+    }
+  };
+
+  const handleMainLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingMainLogo(true);
+    try {
+      const response = await settingsApi.uploadMainLogo(file);
+      if (response.hasLogo && response.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(response.logoUrl));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload logo');
+    } finally {
+      setUploadingMainLogo(false);
+    }
+  };
+
+  const handleMainLogoDelete = async () => {
+    if (!confirm('Are you sure you want to delete the main logo?')) return;
+
+    try {
+      await settingsApi.deleteMainLogo();
+      setMainLogoUrl(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete logo');
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -383,6 +433,17 @@ export function AdminDashboardPage() {
           >
             <Bell className="w-4 h-4" />
             Notifications
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'settings'
+                ? 'bg-primary-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
           </button>
         </div>
 
@@ -888,6 +949,87 @@ export function AdminDashboardPage() {
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && <NotificationsTab />}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            {/* Main Logo Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <Image className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Main Logo</h3>
+                  <p className="text-sm text-gray-500">This logo appears in the header across all pages</p>
+                </div>
+              </div>
+
+              {mainLogoLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Current Logo Preview */}
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <p className="text-sm font-medium text-gray-700 mb-3">Current Logo</p>
+                    {mainLogoUrl ? (
+                      <div className="flex items-center gap-4">
+                        <div className="bg-white border border-gray-200 rounded-lg p-3">
+                          <img
+                            src={mainLogoUrl}
+                            alt="Main Logo"
+                            className="h-12 w-auto max-w-[200px] object-contain"
+                          />
+                        </div>
+                        <button
+                          onClick={handleMainLogoDelete}
+                          className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-sm">No logo uploaded. A default logo will be shown.</div>
+                    )}
+                  </div>
+
+                  {/* Upload New Logo */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload New Logo
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg cursor-pointer hover:bg-primary-600 transition-colors">
+                        {uploadingMainLogo ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                        {uploadingMainLogo ? 'Uploading...' : 'Choose File'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                          onChange={handleMainLogoUpload}
+                          className="hidden"
+                          disabled={uploadingMainLogo}
+                        />
+                      </label>
+                      <span className="text-sm text-gray-500">
+                        JPEG, PNG, GIF, WebP, or SVG. Max 2MB.
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Recommended: Use a horizontal logo with transparent background. Max height: 40px when displayed.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Edit Site Modal */}
         {editingSite && (

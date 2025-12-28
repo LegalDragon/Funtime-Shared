@@ -842,3 +842,58 @@ export const notificationApi = {
     return request('/admin/notifications/lookup/task-priorities', { headers: getAuthHeaders() });
   },
 };
+
+// Settings API
+export interface MainLogoResponse {
+  hasLogo: boolean;
+  logoUrl?: string;
+  fileName?: string;
+}
+
+export const settingsApi = {
+  // Get main logo (public)
+  async getMainLogo(): Promise<MainLogoResponse> {
+    return request('/settings/logo');
+  },
+
+  // Upload main logo (admin only)
+  async uploadMainLogo(file: File): Promise<MainLogoResponse> {
+    const token = localStorage.getItem('auth_token');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/settings/logo`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Delete main logo (admin only)
+  async deleteMainLogo(): Promise<void> {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${API_BASE_URL}/settings/logo`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Delete failed' }));
+      throw new Error(error.message || 'Delete failed');
+    }
+  },
+
+  // Get logo URL for display (handles API path prefix)
+  getLogoDisplayUrl(logoUrl: string): string {
+    if (!logoUrl) return '';
+    // Logo URL is like /asset/123, need to prepend API base
+    return `${API_BASE_URL}${logoUrl}`;
+  },
+};
