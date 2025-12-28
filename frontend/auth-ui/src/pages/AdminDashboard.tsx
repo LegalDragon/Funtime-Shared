@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save } from 'lucide-react';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save, CheckCircle } from 'lucide-react';
 import { adminApi, assetApi, settingsApi } from '../utils/api';
 import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse, AdminPaymentMethod } from '../utils/api';
 import { AssetUploadModal } from '../components/AssetUploadModal';
 import { NotificationsTab } from '../components/NotificationsTab';
 import { PaymentModal } from '../components/PaymentModal';
 import { SiteLogoPreview } from '../components/SiteLogoOverlay';
+import { RichTextEditor } from '../components/RichTextEditor';
 import { config } from '../utils/config';
 
 // Stripe publishable key from runtime config
@@ -71,6 +72,8 @@ export function AdminDashboardPage() {
   const [legalContentLoading, setLegalContentLoading] = useState(false);
   const [savingTerms, setSavingTerms] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [termsSaved, setTermsSaved] = useState(false);
+  const [privacySaved, setPrivacySaved] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
@@ -124,8 +127,11 @@ export function AdminDashboardPage() {
 
   const handleSaveTermsOfService = async () => {
     setSavingTerms(true);
+    setTermsSaved(false);
     try {
       await settingsApi.updateTermsOfService(termsOfService);
+      setTermsSaved(true);
+      setTimeout(() => setTermsSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save Terms of Service');
     } finally {
@@ -135,8 +141,11 @@ export function AdminDashboardPage() {
 
   const handleSavePrivacyPolicy = async () => {
     setSavingPrivacy(true);
+    setPrivacySaved(false);
     try {
       await settingsApi.updatePrivacyPolicy(privacyPolicy);
+      setPrivacySaved(true);
+      setTimeout(() => setPrivacySaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save Privacy Policy');
     } finally {
@@ -1113,29 +1122,33 @@ export function AdminDashboardPage() {
                       <label className="block text-sm font-medium text-gray-700">
                         Terms of Service
                       </label>
-                      <button
-                        onClick={handleSaveTermsOfService}
-                        disabled={savingTerms}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
-                      >
-                        {savingTerms ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Save className="w-4 h-4" />
+                      <div className="flex items-center gap-2">
+                        {termsSaved && (
+                          <span className="flex items-center gap-1 text-sm text-green-600">
+                            <CheckCircle className="w-4 h-4" />
+                            Saved
+                          </span>
                         )}
-                        Save
-                      </button>
+                        <button
+                          onClick={handleSaveTermsOfService}
+                          disabled={savingTerms}
+                          className="flex items-center gap-1 px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+                        >
+                          {savingTerms ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          Save
+                        </button>
+                      </div>
                     </div>
-                    <textarea
+                    <RichTextEditor
                       value={termsOfService}
-                      onChange={(e) => setTermsOfService(e.target.value)}
-                      placeholder="Enter your Terms of Service content here... (HTML supported)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
-                      rows={8}
+                      onChange={setTermsOfService}
+                      placeholder="Enter your Terms of Service content here..."
+                      minHeight="200px"
                     />
-                    <p className="text-xs text-gray-400 mt-1">
-                      HTML formatting is supported. This will be displayed when users click "Terms of Service" during registration.
-                    </p>
                   </div>
 
                   {/* Privacy Policy */}
@@ -1144,29 +1157,33 @@ export function AdminDashboardPage() {
                       <label className="block text-sm font-medium text-gray-700">
                         Privacy Policy
                       </label>
-                      <button
-                        onClick={handleSavePrivacyPolicy}
-                        disabled={savingPrivacy}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
-                      >
-                        {savingPrivacy ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Save className="w-4 h-4" />
+                      <div className="flex items-center gap-2">
+                        {privacySaved && (
+                          <span className="flex items-center gap-1 text-sm text-green-600">
+                            <CheckCircle className="w-4 h-4" />
+                            Saved
+                          </span>
                         )}
-                        Save
-                      </button>
+                        <button
+                          onClick={handleSavePrivacyPolicy}
+                          disabled={savingPrivacy}
+                          className="flex items-center gap-1 px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+                        >
+                          {savingPrivacy ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          Save
+                        </button>
+                      </div>
                     </div>
-                    <textarea
+                    <RichTextEditor
                       value={privacyPolicy}
-                      onChange={(e) => setPrivacyPolicy(e.target.value)}
-                      placeholder="Enter your Privacy Policy content here... (HTML supported)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
-                      rows={8}
+                      onChange={setPrivacyPolicy}
+                      placeholder="Enter your Privacy Policy content here..."
+                      minHeight="200px"
                     />
-                    <p className="text-xs text-gray-400 mt-1">
-                      HTML formatting is supported. This will be displayed when users click "Privacy Policy" during registration.
-                    </p>
                   </div>
                 </div>
               )}
