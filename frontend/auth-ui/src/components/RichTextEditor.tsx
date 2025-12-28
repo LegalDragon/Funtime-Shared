@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Link, Heading1, Heading2, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Bold, Italic, Underline, List, ListOrdered, Link, Heading1, Heading2, AlignLeft, AlignCenter, AlignRight, Image, Code } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,7 +15,9 @@ export function RichTextEditor({
   minHeight = '200px',
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLTextAreaElement>(null);
   const isInitialMount = useRef(true);
+  const [isSourceMode, setIsSourceMode] = useState(false);
 
   // Set initial content
   useEffect(() => {
@@ -58,6 +60,28 @@ export function RichTextEditor({
     if (url) {
       execCommand('createLink', url);
     }
+  };
+
+  const handleImage = () => {
+    const url = prompt('Enter image URL:');
+    if (url) {
+      execCommand('insertImage', url);
+    }
+  };
+
+  const toggleSourceMode = () => {
+    if (isSourceMode) {
+      // Switching from source to visual
+      if (editorRef.current && sourceRef.current) {
+        editorRef.current.innerHTML = sourceRef.current.value;
+        onChange(sourceRef.current.value);
+      }
+    }
+    setIsSourceMode(!isSourceMode);
+  };
+
+  const handleSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
   };
 
   const ToolbarButton = ({
@@ -128,18 +152,47 @@ export function RichTextEditor({
         <ToolbarButton onClick={handleLink} title="Insert Link">
           <Link className="w-4 h-4" />
         </ToolbarButton>
+        <ToolbarButton onClick={handleImage} title="Insert Image">
+          <Image className="w-4 h-4" />
+        </ToolbarButton>
+
+        <div className="w-px h-5 bg-gray-300 mx-1" />
+
+        <button
+          type="button"
+          onClick={toggleSourceMode}
+          title={isSourceMode ? "Visual Editor" : "HTML Source"}
+          className={`p-1.5 rounded transition-colors ${
+            isSourceMode
+              ? 'bg-primary-100 text-primary-700'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Code className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Editor */}
-      <div
-        ref={editorRef}
-        contentEditable
-        onInput={handleInput}
-        onBlur={handleInput}
-        data-placeholder={placeholder}
-        className="p-3 outline-none prose prose-sm max-w-none overflow-y-auto"
-        style={{ minHeight }}
-      />
+      {isSourceMode ? (
+        <textarea
+          ref={sourceRef}
+          value={value}
+          onChange={handleSourceChange}
+          placeholder={placeholder}
+          className="p-3 outline-none w-full font-mono text-sm resize-none"
+          style={{ minHeight }}
+        />
+      ) : (
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={handleInput}
+          onBlur={handleInput}
+          data-placeholder={placeholder}
+          className="p-3 outline-none prose prose-sm max-w-none overflow-y-auto"
+          style={{ minHeight }}
+        />
+      )}
 
       <style>{`
         [contenteditable]:empty:before {
@@ -164,6 +217,11 @@ export function RichTextEditor({
         [contenteditable] a {
           color: #2563eb;
           text-decoration: underline;
+        }
+        [contenteditable] img {
+          max-width: 100%;
+          height: auto;
+          margin: 0.5rem 0;
         }
       `}</style>
     </div>

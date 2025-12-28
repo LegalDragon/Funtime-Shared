@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { settingsApi } from '../utils/api';
+import { settingsApi, authApi, type PublicSite } from '../utils/api';
+import { SiteLogoOverlay } from '../components/SiteLogoOverlay';
 
 export function TermsOfServicePage() {
+  const [searchParams] = useSearchParams();
+  const siteKey = searchParams.get('site') || '';
+
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+  const [foundSiteName, setFoundSiteName] = useState<string | null>(null);
 
   useEffect(() => {
     loadContent();
+    loadSiteInfo();
   }, []);
 
   const loadContent = async () => {
@@ -22,11 +31,43 @@ export function TermsOfServicePage() {
     }
   };
 
+  const loadSiteInfo = async () => {
+    try {
+      // Get main logo
+      const mainLogoResponse = await settingsApi.getMainLogo();
+      if (mainLogoResponse.hasLogo && mainLogoResponse.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
+      }
+
+      // Get site-specific logo if site key provided
+      if (siteKey) {
+        const sites = await authApi.getSites();
+        const site = sites.find((s: PublicSite) => s.key.toLowerCase() === siteKey.toLowerCase());
+        if (site) {
+          setFoundSiteName(site.name);
+          if (site.logoUrl) {
+            setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load site info:', err);
+    }
+  };
+
+  const getSiteTitle = () => {
+    if (foundSiteName) {
+      return `Pickleball.${foundSiteName}`;
+    }
+    return 'Funtime Pickleball';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="flex items-center gap-4 mb-6">
+          {/* Header with logo and title */}
+          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
             <button
               onClick={() => window.close()}
               className="text-gray-500 hover:text-gray-700"
@@ -34,7 +75,17 @@ export function TermsOfServicePage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">Terms of Service</h1>
+            <SiteLogoOverlay
+              mainLogoUrl={mainLogoUrl}
+              siteLogoUrl={siteLogoUrl}
+              siteName={foundSiteName || 'Site'}
+              size="lg"
+              showFallback={true}
+            />
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900">{getSiteTitle()}</h1>
+              <h2 className="text-lg text-gray-600">Terms of Service</h2>
+            </div>
           </div>
 
           {isLoading ? (

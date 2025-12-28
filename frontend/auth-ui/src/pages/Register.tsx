@@ -378,7 +378,7 @@ export function RegisterPage() {
           <p className="mt-5 text-xs text-gray-500 text-center">
             By creating an account, you agree to our{' '}
             <a
-              href="/terms-of-service"
+              href={`/terms-of-service${siteKey ? `?site=${siteKey}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:underline"
@@ -387,7 +387,7 @@ export function RegisterPage() {
             </a>
             {' '}and{' '}
             <a
-              href="/privacy-policy"
+              href={`/privacy-policy${siteKey ? `?site=${siteKey}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:underline"
