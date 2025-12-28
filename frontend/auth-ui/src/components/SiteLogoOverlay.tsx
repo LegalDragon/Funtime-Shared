@@ -4,7 +4,7 @@ interface SiteLogoOverlayProps {
   mainLogoUrl: string | null;
   siteLogoUrl: string | null;
   siteName?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showFallback?: boolean;
 }
@@ -13,12 +13,14 @@ const sizeClasses = {
   sm: 'h-8',
   md: 'h-10',
   lg: 'h-14',
+  xl: 'h-20',
 };
 
 const overlayScales = {
   sm: 'h-4 w-4',
   md: 'h-5 w-5',
   lg: 'h-7 w-7',
+  xl: 'h-10 w-10',
 };
 
 export function SiteLogoOverlay({

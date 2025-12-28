@@ -40,9 +40,10 @@ export function ForgotPasswordPage() {
         setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
       }
 
+      // Case-insensitive site lookup
       if (siteKey) {
         const sites = await authApi.getSites();
-        const site = sites.find(s => s.key === siteKey);
+        const site = sites.find(s => s.key.toLowerCase() === siteKey.toLowerCase());
         if (site?.logoUrl) {
           setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
         }
@@ -204,17 +205,17 @@ export function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo and Site Info */}
-        <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center">
-            <SiteLogoOverlay
-              mainLogoUrl={mainLogoUrl}
-              siteLogoUrl={siteLogoUrl}
-              siteName={siteName}
-              size="lg"
-            />
+        <div className="flex items-center gap-4 mb-8">
+          <SiteLogoOverlay
+            mainLogoUrl={mainLogoUrl}
+            siteLogoUrl={siteLogoUrl}
+            siteName={siteName}
+            size="xl"
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
+            <h2 className="text-lg text-gray-600">{getStepTitle()}</h2>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
-          <h2 className="text-lg text-gray-600 mt-1">{getStepTitle()}</h2>
         </div>
 
         {/* Card */}

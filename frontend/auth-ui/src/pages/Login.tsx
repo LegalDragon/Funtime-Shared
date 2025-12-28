@@ -47,10 +47,10 @@ export function LoginPage() {
         setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
       }
 
-      // Load site logo if site key is present
+      // Load site logo if site key is present (case-insensitive)
       if (siteKey) {
         const sites = await authApi.getSites();
-        const site = sites.find(s => s.key === siteKey);
+        const site = sites.find(s => s.key.toLowerCase() === siteKey.toLowerCase());
         if (site?.logoUrl) {
           setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
         }
@@ -186,22 +186,22 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo and Site Info */}
-        <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center">
-            <SiteLogoOverlay
-              mainLogoUrl={mainLogoUrl}
-              siteLogoUrl={siteLogoUrl}
-              siteName={siteName}
-              size="lg"
-            />
+        <div className="flex items-center gap-4 mb-8">
+          <SiteLogoOverlay
+            mainLogoUrl={mainLogoUrl}
+            siteLogoUrl={siteLogoUrl}
+            siteName={siteName}
+            size="xl"
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
+            <h2 className="text-lg text-gray-600">Sign in</h2>
+            {returnTo && (
+              <p className="text-sm text-gray-500">
+                to continue to {returnTo}
+              </p>
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
-          <h2 className="text-lg text-gray-600 mt-1">Sign in</h2>
-          {returnTo && (
-            <p className="text-sm text-gray-500 mt-1">
-              to continue to {returnTo}
-            </p>
-          )}
         </div>
 
         {/* Auth Card */}
