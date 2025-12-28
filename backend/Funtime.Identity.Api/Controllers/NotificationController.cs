@@ -583,10 +583,10 @@ public class NotificationController : ControllerBase
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
 
             var sentToday = await conn.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM EmailHistory WHERE SentAt >= @Today",
+                "SELECT COUNT(*) FROM EmailOutbox WHERE Status = 100 AND CreatedAt >= @Today",
                 new { Today = today });
             var sentThisWeek = await conn.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM EmailHistory WHERE SentAt >= @ThisWeek",
+                "SELECT COUNT(*) FROM EmailOutbox WHERE Status = 100 AND CreatedAt >= @ThisWeek",
                 new { ThisWeek = thisWeek });
 
             return new NotificationStats
