@@ -66,21 +66,17 @@ public class AssetController : ControllerBase
         var detectedAssetType = assetType ?? DetectAssetType(file.ContentType);
 
         var userId = GetCurrentUserId();
-        var containerName = category ?? "general";
 
         try
         {
-            // Upload to storage (with site organization)
-            var storageUrl = await _storageService.UploadFileAsync(file, containerName, siteKey);
-
-            // Create asset record
+            // Create asset record first to get the ID
             var asset = new Asset
             {
                 AssetType = detectedAssetType,
                 FileName = file.FileName,
                 ContentType = file.ContentType,
                 FileSize = file.Length,
-                StorageUrl = storageUrl,
+                StorageUrl = string.Empty, // Will be updated after upload
                 StorageType = _storageService.StorageType,
                 Category = category,
                 SiteKey = siteKey,
@@ -89,6 +85,13 @@ public class AssetController : ControllerBase
             };
 
             _context.Assets.Add(asset);
+            await _context.SaveChangesAsync();
+
+            // Now upload with the asset ID as filename
+            var storageUrl = await _storageService.UploadFileAsync(file, asset.Id, siteKey);
+
+            // Update asset with storage URL
+            asset.StorageUrl = storageUrl;
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Asset {AssetId} ({AssetType}) uploaded by user {UserId}", asset.Id, detectedAssetType, userId);

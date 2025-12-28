@@ -195,11 +195,31 @@ public class AdminController : ControllerBase
             }
         }
 
-        // Upload to S3
-        var logoUrl = await _fileStorageService.UploadFileAsync(file, "logos");
+        // Create asset record first to get the ID
+        var asset = new Asset
+        {
+            AssetType = AssetTypes.Image,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            FileSize = file.Length,
+            StorageUrl = string.Empty,
+            StorageType = _fileStorageService.StorageType,
+            Category = "logos",
+            SiteKey = key,
+            IsPublic = true
+        };
 
-        // Update the site's logo URL
-        site.LogoUrl = logoUrl;
+        _context.Assets.Add(asset);
+        await _context.SaveChangesAsync();
+
+        // Upload with asset ID as filename
+        var logoUrl = await _fileStorageService.UploadFileAsync(file, asset.Id, key);
+
+        // Update asset with storage URL
+        asset.StorageUrl = logoUrl;
+
+        // Update the site's logo URL (use asset endpoint)
+        site.LogoUrl = $"/asset/{asset.Id}";
         site.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 

@@ -5,7 +5,6 @@ public class LocalFileStorageService : IFileStorageService
     private readonly IWebHostEnvironment _environment;
     private readonly string _basePath;
     private readonly string _baseUrl;
-    private readonly bool _organizeByMonth;
 
     public string StorageType => "local";
 
@@ -19,36 +18,23 @@ public class LocalFileStorageService : IFileStorageService
 
         // Base URL prefix for serving files (e.g., "" or "https://cdn.example.com")
         _baseUrl = configuration["Storage:LocalBaseUrl"] ?? "";
-
-        // Whether to organize files into monthly subfolders
-        _organizeByMonth = configuration.GetValue("Storage:OrganizeByMonth", true);
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string containerName, string? siteKey = null)
+    public async Task<string> UploadFileAsync(IFormFile file, int assetId, string? siteKey = null)
     {
-        // Build the path: basePath / containerName / [siteKey] / [YYYY-MM] / filename
-        var pathParts = new List<string> { _basePath, containerName };
-        var urlParts = new List<string> { "uploads", containerName };
+        // Default siteKey to "Shared" if not provided
+        var effectiveSiteKey = string.IsNullOrWhiteSpace(siteKey) ? "Shared" : siteKey;
 
-        // Add site subfolder if provided
-        if (!string.IsNullOrEmpty(siteKey))
-        {
-            pathParts.Add(siteKey);
-            urlParts.Add(siteKey);
-        }
+        // Monthly folder
+        var monthFolder = DateTime.UtcNow.ToString("yyyy-MM");
 
-        // Add month subfolder if enabled
-        if (_organizeByMonth)
-        {
-            var monthFolder = DateTime.UtcNow.ToString("yyyy-MM");
-            pathParts.Add(monthFolder);
-            urlParts.Add(monthFolder);
-        }
-
-        var uploadsPath = Path.Combine(pathParts.ToArray());
+        // Build path: basePath/siteKey/YYYY-MM/
+        var uploadsPath = Path.Combine(_basePath, effectiveSiteKey, monthFolder);
         Directory.CreateDirectory(uploadsPath);
 
-        var fileName = $"{Guid.NewGuid()}-{SanitizeFileName(file.FileName)}";
+        // Filename: assetId.extension
+        var extension = Path.GetExtension(file.FileName);
+        var fileName = $"{assetId}{extension}";
         var filePath = Path.Combine(uploadsPath, fileName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
@@ -56,8 +42,8 @@ public class LocalFileStorageService : IFileStorageService
             await file.CopyToAsync(stream);
         }
 
-        // Build the relative URL
-        var relativeUrl = "/" + string.Join("/", urlParts) + "/" + fileName;
+        // Build the relative URL: /uploads/siteKey/YYYY-MM/assetId.ext
+        var relativeUrl = $"/uploads/{effectiveSiteKey}/{monthFolder}/{fileName}";
 
         // Return with base URL if configured
         return string.IsNullOrEmpty(_baseUrl) ? relativeUrl : _baseUrl + relativeUrl;
@@ -149,15 +135,5 @@ public class LocalFileStorageService : IFileStorageService
         {
             // Ignore cleanup errors - not critical
         }
-    }
-
-    /// <summary>
-    /// Sanitize a filename to remove potentially dangerous characters
-    /// </summary>
-    private static string SanitizeFileName(string fileName)
-    {
-        var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = new string(fileName.Where(c => !invalidChars.Contains(c)).ToArray());
-        return string.IsNullOrEmpty(sanitized) ? "file" : sanitized;
     }
 }

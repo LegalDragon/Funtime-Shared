@@ -8,7 +8,6 @@ public class AwsS3StorageService : IFileStorageService
 {
     private readonly IAmazonS3 _s3Client;
     private readonly string _bucketName;
-    private readonly bool _organizeByMonth;
 
     public string StorageType => "s3";
 
@@ -16,7 +15,6 @@ public class AwsS3StorageService : IFileStorageService
     {
         var awsConfig = configuration.GetSection("AWS");
         _bucketName = awsConfig["BucketName"] ?? "funtime-identity";
-        _organizeByMonth = configuration.GetValue("Storage:OrganizeByMonth", true);
 
         // In production, use IAM roles. For development, use credentials:
         _s3Client = new AmazonS3Client(
@@ -26,27 +24,20 @@ public class AwsS3StorageService : IFileStorageService
         );
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string containerName, string? siteKey = null)
+    public async Task<string> UploadFileAsync(IFormFile file, int assetId, string? siteKey = null)
     {
-        // Build the S3 key: containerName / [siteKey] / [YYYY-MM] / filename
-        var keyParts = new List<string> { containerName };
+        // Default siteKey to "Shared" if not provided
+        var effectiveSiteKey = string.IsNullOrWhiteSpace(siteKey) ? "Shared" : siteKey;
 
-        // Add site subfolder if provided
-        if (!string.IsNullOrEmpty(siteKey))
-        {
-            keyParts.Add(siteKey);
-        }
+        // Monthly folder
+        var monthFolder = DateTime.UtcNow.ToString("yyyy-MM");
 
-        // Add month subfolder if enabled
-        if (_organizeByMonth)
-        {
-            keyParts.Add(DateTime.UtcNow.ToString("yyyy-MM"));
-        }
+        // Filename: assetId.extension
+        var extension = Path.GetExtension(file.FileName);
+        var fileName = $"{assetId}{extension}";
 
-        // Add the filename
-        keyParts.Add($"{Guid.NewGuid()}-{SanitizeFileName(file.FileName)}");
-
-        var key = string.Join("/", keyParts);
+        // Build the S3 key: siteKey/YYYY-MM/assetId.ext
+        var key = $"{effectiveSiteKey}/{monthFolder}/{fileName}";
 
         using var stream = file.OpenReadStream();
         var uploadRequest = new TransferUtilityUploadRequest
@@ -119,16 +110,5 @@ public class AwsS3StorageService : IFileStorageService
             return uri.AbsolutePath.TrimStart('/');
         }
         return fileUrl.TrimStart('/');
-    }
-
-    /// <summary>
-    /// Sanitize a filename to remove potentially dangerous characters
-    /// </summary>
-    private static string SanitizeFileName(string fileName)
-    {
-        // S3 allows most characters, but we want clean filenames
-        var invalidChars = new[] { '\\', '"', '<', '>', '|', '\0', '\n', '\r' };
-        var sanitized = new string(fileName.Where(c => !invalidChars.Contains(c)).ToArray());
-        return string.IsNullOrEmpty(sanitized) ? "file" : sanitized;
     }
 }

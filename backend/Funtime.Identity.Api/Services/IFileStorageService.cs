@@ -8,12 +8,13 @@ public interface IFileStorageService
     string StorageType { get; }
 
     /// <summary>
-    /// Upload a file and return the storage URL
+    /// Upload a file with asset ID as the filename
+    /// Path structure: siteKey/YYYY-MM/assetId.extension
     /// </summary>
     /// <param name="file">The file to upload</param>
-    /// <param name="containerName">Category/container name (e.g., "logos", "avatars")</param>
-    /// <param name="siteKey">Optional site key for folder organization (e.g., "pickleball-community")</param>
-    Task<string> UploadFileAsync(IFormFile file, string containerName, string? siteKey = null);
+    /// <param name="assetId">The asset ID to use as filename</param>
+    /// <param name="siteKey">Site key for folder organization (defaults to "Shared")</param>
+    Task<string> UploadFileAsync(IFormFile file, int assetId, string? siteKey = null);
 
     /// <summary>
     /// Delete a file from storage
