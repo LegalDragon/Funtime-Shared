@@ -105,6 +105,233 @@ function App() {
 }
 ```
 
+## Integrating @funtime/ui in Consumer Sites
+
+### Step 1: Install the Package
+
+```bash
+npm install @funtime/ui
+# or
+yarn add @funtime/ui
+```
+
+### Step 2: Initialize the Client (Required)
+
+Create a file like `src/lib/funtime.ts` and initialize early in your app (e.g., in `_app.tsx` or `main.tsx`):
+
+```typescript
+import { initFuntimeClient } from '@funtime/ui';
+
+// Call this BEFORE using any hooks or API calls
+initFuntimeClient({
+  baseUrl: process.env.NEXT_PUBLIC_IDENTITY_API_URL || 'http://localhost:5000',
+  getToken: () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('funtime_token');
+    }
+    return null;
+  },
+  onUnauthorized: () => {
+    localStorage.removeItem('funtime_token');
+    window.location.href = '/login';
+  },
+});
+```
+
+### Step 3: Use Authentication Hooks
+
+```typescript
+import { useAuth } from '@funtime/ui';
+
+function MyComponent() {
+  const {
+    isAuthenticated,
+    isLoading,
+    user,           // { id, email, phoneNumber, systemRole }
+    login,          // (email, password) => Promise
+    loginWithOtp,   // (phone, otp) => Promise
+    register,       // (email, password) => Promise
+    logout,         // () => void
+    sendOtp,        // (phone) => Promise
+  } = useAuth();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return isAuthenticated ? (
+    <div>Welcome, {user?.email}</div>
+  ) : (
+    <div>Please log in</div>
+  );
+}
+```
+
+### Step 4: Use Sites Hook (for site memberships)
+
+```typescript
+import { useSites } from '@funtime/ui';
+
+function SiteMembership() {
+  const {
+    sites,          // User's site memberships
+    isLoading,
+    joinSite,       // (siteKey) => Promise
+    leaveSite,      // (siteKey) => Promise
+    checkMembership // (siteKey) => Promise<boolean>
+  } = useSites();
+
+  return (
+    <div>
+      {sites.map(site => (
+        <div key={site.siteKey}>
+          {site.siteKey} - Role: {site.role}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Step 5: Use Payments Hook (for Stripe integration)
+
+```typescript
+import { usePayments } from '@funtime/ui';
+
+function PaymentSection() {
+  const {
+    customer,           // Stripe customer info
+    paymentMethods,     // Saved payment methods
+    subscriptions,      // Active subscriptions
+    isLoading,
+    createPayment,      // (amountCents, description, siteKey?) => Promise
+    addPaymentMethod,   // (stripePaymentMethodId) => Promise
+    removePaymentMethod,// (paymentMethodId) => Promise
+    createSubscription, // (stripePriceId, siteKey?) => Promise
+    cancelSubscription, // (subscriptionId) => Promise
+  } = usePayments();
+
+  return (
+    <div>
+      {paymentMethods.map(pm => (
+        <div key={pm.id}>
+          {pm.brand} •••• {pm.last4}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Step 6: Use Shared Components
+
+```typescript
+import {
+  Button,       // Primary button component
+  Input,        // Form input with validation
+  Card,         // Container card
+  AuthForm,     // Complete login/register form
+  Avatar,       // User avatar with fallback
+  SkillBadge,   // Skill level display (1.0 - 5.5+)
+  SiteBadge,    // Site membership badge
+} from '@funtime/ui';
+
+function MyPage() {
+  return (
+    <Card>
+      <Avatar src={user.avatarUrl} name={user.displayName} size="lg" />
+      <SkillBadge level={user.skillLevel} />
+      <Button variant="primary" onClick={handleClick}>
+        Click Me
+      </Button>
+    </Card>
+  );
+}
+```
+
+### Direct API Access
+
+For custom API calls not covered by hooks:
+
+```typescript
+import { funtimeApi } from '@funtime/ui';
+
+// Auth endpoints
+const user = await funtimeApi.auth.me();
+const result = await funtimeApi.auth.login(email, password);
+await funtimeApi.auth.register(email, password);
+await funtimeApi.auth.sendOtp(phone);
+await funtimeApi.auth.verifyOtp(phone, otp);
+await funtimeApi.auth.changePassword(currentPassword, newPassword);
+
+// Profile endpoints
+const profile = await funtimeApi.profile.get();
+await funtimeApi.profile.update({ displayName, bio, city });
+const publicProfile = await funtimeApi.profile.getPublic(userId);
+
+// Sites endpoints
+const sites = await funtimeApi.sites.list();
+await funtimeApi.sites.join(siteKey);
+await funtimeApi.sites.leave(siteKey);
+
+// Payments endpoints
+const customer = await funtimeApi.payments.getCustomer();
+const methods = await funtimeApi.payments.getPaymentMethods();
+const history = await funtimeApi.payments.getHistory();
+```
+
+### Environment Variables for Consumer Sites
+
+```env
+# .env.local or .env
+NEXT_PUBLIC_IDENTITY_API_URL=http://localhost:5000
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+```
+
+### Example: Next.js Integration
+
+```typescript
+// pages/_app.tsx
+import '@funtime/ui/styles.css';  // Import shared styles
+import { initFuntimeClient } from '@funtime/ui';
+
+// Initialize before app renders
+initFuntimeClient({
+  baseUrl: process.env.NEXT_PUBLIC_IDENTITY_API_URL!,
+  getToken: () => localStorage.getItem('funtime_token'),
+  onUnauthorized: () => {
+    localStorage.removeItem('funtime_token');
+    window.location.href = '/login';
+  },
+});
+
+export default function App({ Component, pageProps }) {
+  return <Component {...pageProps} />;
+}
+```
+
+```typescript
+// pages/login.tsx
+import { AuthForm } from '@funtime/ui';
+import { useRouter } from 'next/router';
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const handleSuccess = (token: string) => {
+    localStorage.setItem('funtime_token', token);
+    router.push('/dashboard');
+  };
+
+  return (
+    <AuthForm
+      mode="login"
+      onSuccess={handleSuccess}
+      showOtpOption={true}
+      siteKey="community"  // Auto-join this site on register
+    />
+  );
+}
+```
+
 ## API Endpoints
 
 ### Authentication (`/auth`)
