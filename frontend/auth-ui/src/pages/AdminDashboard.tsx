@@ -5,6 +5,7 @@ import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetU
 import { AssetUploadModal } from '../components/AssetUploadModal';
 import { NotificationsTab } from '../components/NotificationsTab';
 import { PaymentModal } from '../components/PaymentModal';
+import { SiteLogoPreview } from '../components/SiteLogoOverlay';
 import { config } from '../utils/config';
 
 // Stripe publishable key from runtime config
@@ -78,7 +79,7 @@ export function AdminDashboardPage() {
   // Load data when tab changes
   useEffect(() => {
     if (activeTab === 'payments') loadPayments();
-    if (activeTab === 'settings') loadMainLogo();
+    if (activeTab === 'settings' || activeTab === 'sites') loadMainLogo();
   }, [activeTab]);
 
   const loadMainLogo = async () => {
@@ -485,26 +486,27 @@ export function AdminDashboardPage() {
             ) : (
               <div className="divide-y divide-gray-200">
                 {sites.map((site) => (
-                  <div key={site.key} className="p-4 flex items-center gap-4 hover:bg-gray-50">
-                    {/* Logo */}
-                    <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                      {site.logoUrl ? (
-                        <img
-                          src={site.logoUrl}
-                          alt={`${site.name} logo`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Globe className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900">{site.name}</h3>
-                      <p className="text-sm text-gray-500 truncate">{site.key} • {site.url}</p>
-                      {site.description && (
-                        <p className="text-sm text-gray-400 mt-1 truncate">{site.description}</p>
-                      )}
-                    </div>
+                  <div key={site.key} className="p-4 hover:bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      {/* Site Logo */}
+                      <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {site.logoUrl ? (
+                          <img
+                            src={settingsApi.getLogoDisplayUrl(site.logoUrl)}
+                            alt={`${site.name} logo`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Globe className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900">{site.name}</h3>
+                        <p className="text-sm text-gray-500 truncate">{site.key} • {site.url}</p>
+                        {site.description && (
+                          <p className="text-sm text-gray-400 mt-1 truncate">{site.description}</p>
+                        )}
+                      </div>
                     <div className="flex items-center gap-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         site.isActive
@@ -525,6 +527,18 @@ export function AdminDashboardPage() {
                         <Edit2 className="w-5 h-5" />
                       </button>
                     </div>
+                    </div>
+                    {/* Logo Overlay Preview */}
+                    {(mainLogoUrl || site.logoUrl) && (
+                      <div className="mt-3 ml-16">
+                        <p className="text-xs text-gray-400 mb-1">Header Preview:</p>
+                        <SiteLogoPreview
+                          mainLogoUrl={mainLogoUrl}
+                          siteLogoUrl={site.logoUrl ? settingsApi.getLogoDisplayUrl(site.logoUrl) : null}
+                          siteName={site.name}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
                 {sites.length === 0 && (

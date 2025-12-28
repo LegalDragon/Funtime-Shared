@@ -1,24 +1,44 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { settingsApi } from '../utils/api';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { authApi, settingsApi } from '../utils/api';
+import { SiteLogoOverlay } from './SiteLogoOverlay';
 
 export function Header() {
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+  const [siteName, setSiteName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const siteKey = searchParams.get('site');
 
   useEffect(() => {
-    loadLogo();
-  }, []);
+    loadLogos();
+  }, [siteKey]);
 
-  const loadLogo = async () => {
+  const loadLogos = async () => {
+    setIsLoading(true);
     try {
-      const response = await settingsApi.getMainLogo();
-      if (response.hasLogo && response.logoUrl) {
-        setLogoUrl(settingsApi.getLogoDisplayUrl(response.logoUrl));
+      // Load main logo
+      const mainLogoResponse = await settingsApi.getMainLogo();
+      if (mainLogoResponse.hasLogo && mainLogoResponse.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
+      }
+
+      // Load site logo if site key is present
+      if (siteKey) {
+        const sites = await authApi.getSites();
+        const site = sites.find(s => s.key === siteKey);
+        if (site) {
+          setSiteName(site.name);
+          if (site.logoUrl) {
+            setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+          }
+        }
       }
     } catch (error) {
-      console.error('Failed to load main logo:', error);
+      console.error('Failed to load logos:', error);
     } finally {
       setIsLoading(false);
     }
@@ -34,27 +54,17 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center">
             {isLoading ? (
               <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
-            ) : logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="Logo"
-                className="h-10 w-auto max-w-[180px] object-contain"
-                onError={(e) => {
-                  // Hide broken image
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
             ) : (
-              // Default logo/text when no logo is uploaded
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">F</span>
-                </div>
-                <span className="text-xl font-semibold text-gray-900">Funtime</span>
-              </div>
+              <SiteLogoOverlay
+                mainLogoUrl={mainLogoUrl}
+                siteLogoUrl={siteLogoUrl}
+                siteName={siteName}
+                size="md"
+                showFallback={true}
+              />
             )}
           </Link>
 
@@ -62,7 +72,7 @@ export function Header() {
           <nav className="flex items-center space-x-4">
             {location.pathname !== '/login' && (
               <Link
-                to="/login"
+                to={`/login${location.search}`}
                 className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
               >
                 Sign In
@@ -70,7 +80,7 @@ export function Header() {
             )}
             {location.pathname !== '/register' && (
               <Link
-                to="/register"
+                to={`/register${location.search}`}
                 className="text-sm font-medium text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors"
               >
                 Sign Up
