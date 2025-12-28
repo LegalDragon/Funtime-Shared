@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
-import { authApi } from '../utils/api';
+import { authApi, settingsApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey, redirectWithToken, getRedirectUrl } from '../utils/redirect';
-import { MainLogo } from '../components/MainLogo';
+import { SiteLogoOverlay } from '../components/SiteLogoOverlay';
 
 type Step = 'input' | 'code' | 'password' | 'create-account' | 'success' | 'account-created';
 type RecoveryMode = 'email' | 'phone';
@@ -24,6 +24,55 @@ export function ForgotPasswordPage() {
 
   const siteKey = getSiteKey();
   const siteName = getSiteDisplayName(siteKey);
+
+  // Logo state
+  const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadLogos();
+  }, [siteKey]);
+
+  const loadLogos = async () => {
+    try {
+      const mainLogoResponse = await settingsApi.getMainLogo();
+      if (mainLogoResponse.hasLogo && mainLogoResponse.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
+      }
+
+      if (siteKey) {
+        const sites = await authApi.getSites();
+        const site = sites.find(s => s.key === siteKey);
+        if (site?.logoUrl) {
+          setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load logos:', error);
+    }
+  };
+
+  const getSiteTitle = () => {
+    if (siteKey) {
+      const parts = siteKey.split('-');
+      if (parts[0]?.toLowerCase() === 'pickleball' && parts[1]) {
+        return `Pickleball.${parts[1].charAt(0).toUpperCase()}${parts[1].slice(1)}`;
+      }
+      return siteName;
+    }
+    return 'Funtime Pickleball';
+  };
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 'success': return 'Password reset';
+      case 'account-created': return 'Account created';
+      case 'create-account': return 'Create account';
+      case 'password': return 'Set new password';
+      case 'code': return 'Enter code';
+      default: return 'Reset password';
+    }
+  };
 
   const recoveryValue = mode === 'email' ? email : phoneNumber;
 
@@ -152,25 +201,20 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12 pt-20">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
       <div className="max-w-md w-full animate-fade-in">
-        {/* Logo */}
+        {/* Logo and Site Info */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
-            {step === 'success' || step === 'account-created' ? (
-              <CheckCircle2 className="w-8 h-8 text-white" />
-            ) : step === 'create-account' ? (
-              <UserPlus className="w-8 h-8 text-white" />
-            ) : (
-              <KeyRound className="w-8 h-8 text-white" />
-            )}
+          <div className="mb-4 flex justify-center">
+            <SiteLogoOverlay
+              mainLogoUrl={mainLogoUrl}
+              siteLogoUrl={siteLogoUrl}
+              siteName={siteName}
+              size="lg"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'success' ? 'Password Reset!' : step === 'account-created' ? 'Welcome!' : step === 'create-account' ? 'Create Account' : 'Reset your password'}
-          </h1>
-          {step !== 'success' && step !== 'account-created' && (
-            <p className="text-sm text-gray-500 mt-1">{siteName}</p>
-          )}
+          <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
+          <h2 className="text-lg text-gray-600 mt-1">{getStepTitle()}</h2>
         </div>
 
         {/* Card */}

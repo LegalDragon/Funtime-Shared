@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn, Mail, Phone, Loader2, MessageSquare } from 'lucide-react';
-import { authApi } from '../utils/api';
+import { authApi, settingsApi } from '../utils/api';
 import { redirectWithToken, getSiteDisplayName, getSiteKey, getReturnTo, getRedirectUrl } from '../utils/redirect';
-import { MainLogo } from '../components/MainLogo';
+import { SiteLogoOverlay } from '../components/SiteLogoOverlay';
 
 type AuthMode = 'email' | 'phone';
 type PhoneAuthMethod = 'password' | 'otp';
@@ -30,6 +30,48 @@ export function LoginPage() {
   const siteName = getSiteDisplayName(siteKey);
   const returnTo = getReturnTo();
   const redirectUrl = getRedirectUrl();
+
+  // Logo state
+  const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadLogos();
+  }, [siteKey]);
+
+  const loadLogos = async () => {
+    try {
+      // Load main logo
+      const mainLogoResponse = await settingsApi.getMainLogo();
+      if (mainLogoResponse.hasLogo && mainLogoResponse.logoUrl) {
+        setMainLogoUrl(settingsApi.getLogoDisplayUrl(mainLogoResponse.logoUrl));
+      }
+
+      // Load site logo if site key is present
+      if (siteKey) {
+        const sites = await authApi.getSites();
+        const site = sites.find(s => s.key === siteKey);
+        if (site?.logoUrl) {
+          setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load logos:', error);
+    }
+  };
+
+  // Get site display title (e.g., "Pickleball.Community" or "Funtime Pickleball")
+  const getSiteTitle = () => {
+    if (siteKey) {
+      // Convert site key like "pickleball-community" to "Pickleball.Community"
+      const parts = siteKey.split('-');
+      if (parts[0]?.toLowerCase() === 'pickleball' && parts[1]) {
+        return `Pickleball.${parts[1].charAt(0).toUpperCase()}${parts[1].slice(1)}`;
+      }
+      return siteName;
+    }
+    return 'Funtime Pickleball';
+  };
 
   // Handle successful login - route based on user role and redirect URL
   const handleLoginSuccess = (token: string, systemRole?: string) => {
@@ -141,14 +183,20 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12 pt-20">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-12">
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo and Site Info */}
         <div className="text-center mb-8">
-          <div className="mb-4">
-            <MainLogo size="md" />
+          <div className="mb-4 flex justify-center">
+            <SiteLogoOverlay
+              mainLogoUrl={mainLogoUrl}
+              siteLogoUrl={siteLogoUrl}
+              siteName={siteName}
+              size="lg"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Sign in to {siteName}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
+          <h2 className="text-lg text-gray-600 mt-1">Sign in</h2>
           {returnTo && (
             <p className="text-sm text-gray-500 mt-1">
               to continue to {returnTo}
