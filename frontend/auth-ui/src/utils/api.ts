@@ -893,6 +893,14 @@ export const settingsApi = {
   // Get logo URL for display (handles API path prefix)
   getLogoDisplayUrl(logoUrl: string): string {
     if (!logoUrl) return '';
+    // If URL already has protocol or API base, return as-is
+    if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+      return logoUrl;
+    }
+    // If URL already starts with API_BASE_URL path, don't double-prefix
+    if (API_BASE_URL && logoUrl.startsWith(API_BASE_URL)) {
+      return logoUrl;
+    }
     // Logo URL is like /asset/123, need to prepend API base
     return `${API_BASE_URL}${logoUrl}`;
   },
