@@ -297,3 +297,343 @@ Access at `/admin` (requires SU system role):
 - **React Router** for navigation
 - **Stripe** for payments
 - **Lucide** for icons
+
+---
+
+# Backend Reference
+
+This section documents the backend API for sites that need to validate tokens or access user data.
+
+## JWT Token Structure
+
+Tokens are signed with HMAC-SHA256. Claims included:
+
+| Claim | Type | Description |
+|-------|------|-------------|
+| `nameid` | string | User ID (integer as string) |
+| `email` | string | User's email (if set) |
+| `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobilephone` | string | Phone number (if set) |
+| `role` | string | System role (`SU` for super admin, null for regular) |
+| `sites` | JSON array | List of site keys user belongs to: `["community","college"]` |
+| `jti` | string | Unique token ID |
+| `exp` | number | Expiration timestamp |
+| `iss` | string | Issuer: `FuntimePickleball` |
+| `aud` | string | Audience: `FuntimePickleballUsers` |
+
+### Example Decoded Token
+```json
+{
+  "nameid": "42",
+  "email": "user@example.com",
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobilephone": "+15551234567",
+  "role": "SU",
+  "sites": "[\"community\",\"college\"]",
+  "jti": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "exp": 1735430400,
+  "iss": "FuntimePickleball",
+  "aud": "FuntimePickleballUsers"
+}
+```
+
+---
+
+## JWT Configuration
+
+Backend uses these settings in `appsettings.json`:
+
+```json
+{
+  "Jwt": {
+    "Key": "your-32-char-secret-key-here!!!",
+    "Issuer": "FuntimePickleball",
+    "Audience": "FuntimePickleballUsers",
+    "ExpirationInMinutes": 1440
+  }
+}
+```
+
+**Important:** All sites sharing auth must use the same JWT Key, Issuer, and Audience.
+
+---
+
+## Token Validation (C# Example)
+
+For ASP.NET Core sites consuming the token:
+
+```csharp
+// Program.cs or Startup.cs
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+            ValidateIssuer = true,
+            ValidIssuer = "FuntimePickleball",
+            ValidateAudience = true,
+            ValidAudience = "FuntimePickleballUsers",
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+// In controllers, access claims:
+var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+var email = User.FindFirst(ClaimTypes.Email)?.Value;
+var phone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+var role = User.FindFirst(ClaimTypes.Role)?.Value;
+var sitesJson = User.FindFirst("sites")?.Value;
+var sites = sitesJson != null ? JsonSerializer.Deserialize<List<string>>(sitesJson) : null;
+```
+
+---
+
+## Token Validation (Node.js Example)
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = 'your-32-char-secret-key-here!!!';
+const JWT_ISSUER = 'FuntimePickleball';
+const JWT_AUDIENCE = 'FuntimePickleballUsers';
+
+function validateToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE
+    });
+
+    return {
+      valid: true,
+      userId: parseInt(decoded.nameid),
+      email: decoded.email,
+      phone: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobilephone'],
+      role: decoded.role,
+      sites: decoded.sites ? JSON.parse(decoded.sites) : []
+    };
+  } catch (err) {
+    return { valid: false, error: err.message };
+  }
+}
+
+// Express middleware example
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+  const result = validateToken(token);
+
+  if (!result.valid) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  req.user = result;
+  next();
+}
+```
+
+---
+
+## Database Schema
+
+### Users Table
+```sql
+CREATE TABLE Users (
+    Id INT PRIMARY KEY IDENTITY,
+    Email NVARCHAR(255) NULL,
+    PasswordHash NVARCHAR(255) NULL,
+    PhoneNumber NVARCHAR(20) NULL,
+    SystemRole NVARCHAR(10) NULL,        -- 'SU' for super admin
+    IsEmailVerified BIT DEFAULT 0,
+    IsPhoneVerified BIT DEFAULT 0,
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL,
+    LastLoginAt DATETIME2 NULL
+);
+```
+
+### Sites Table
+```sql
+CREATE TABLE Sites (
+    Key NVARCHAR(50) PRIMARY KEY,        -- e.g., 'community', 'college'
+    Name NVARCHAR(100) NOT NULL,         -- e.g., 'Community', 'College'
+    Description NVARCHAR(500) NULL,
+    Url NVARCHAR(255) NULL,              -- e.g., 'https://pickleball.community'
+    LogoUrl NVARCHAR(500) NULL,          -- Path to site logo
+    IsActive BIT DEFAULT 1,
+    RequiresSubscription BIT DEFAULT 0,
+    MonthlyPriceCents BIGINT NULL,
+    YearlyPriceCents BIGINT NULL,
+    DisplayOrder INT DEFAULT 0,
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NULL
+);
+```
+
+### UserSites Table (Many-to-Many)
+```sql
+CREATE TABLE UserSites (
+    Id INT PRIMARY KEY IDENTITY,
+    UserId INT NOT NULL FOREIGN KEY REFERENCES Users(Id),
+    SiteKey NVARCHAR(50) NOT NULL,       -- References Sites.Key
+    JoinedAt DATETIME2 DEFAULT GETUTCDATE(),
+    IsActive BIT DEFAULT 1,
+    Role NVARCHAR(50) DEFAULT 'member'   -- 'member', 'admin', 'moderator'
+);
+```
+
+### Settings Table
+```sql
+CREATE TABLE Settings (
+    Id INT PRIMARY KEY IDENTITY,
+    Key NVARCHAR(100) NOT NULL UNIQUE,   -- 'main_logo', 'terms_of_service', 'privacy_policy'
+    Value NVARCHAR(MAX) NOT NULL,
+    UpdatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    UpdatedBy INT NULL
+);
+```
+
+---
+
+## Site-Specific Data Access Pattern
+
+When building a site (e.g., pickleball.community), check if user belongs to that site:
+
+```csharp
+// Check if user can access this site
+public async Task<bool> CanAccessSite(int userId, string siteKey)
+{
+    return await _context.UserSites
+        .AnyAsync(us => us.UserId == userId
+                     && us.SiteKey == siteKey
+                     && us.IsActive);
+}
+
+// Get user's role on a site
+public async Task<string?> GetUserSiteRole(int userId, string siteKey)
+{
+    var userSite = await _context.UserSites
+        .FirstOrDefaultAsync(us => us.UserId == userId && us.SiteKey == siteKey);
+    return userSite?.Role;
+}
+```
+
+Or check the `sites` claim in the JWT (faster, no DB call):
+```csharp
+var sitesJson = User.FindFirst("sites")?.Value;
+var sites = JsonSerializer.Deserialize<List<string>>(sitesJson ?? "[]");
+bool canAccess = sites.Contains("community");
+```
+
+---
+
+## Backend Project Structure
+
+```
+backend/Funtime.Identity.Api/
+├── Controllers/
+│   ├── AuthController.cs        # Login, register, OTP, password reset
+│   ├── AdminController.cs       # Admin stats, sites, users management
+│   ├── SettingsController.cs    # Logo, ToS, Privacy Policy
+│   └── AssetController.cs       # File uploads
+├── Models/
+│   ├── User.cs                  # User entity
+│   ├── Site.cs                  # Site configuration
+│   ├── UserSite.cs              # User-site membership
+│   ├── Setting.cs               # Key-value settings
+│   └── ...                      # Payment, Subscription, etc.
+├── Services/
+│   ├── JwtService.cs            # Token generation/validation
+│   ├── OtpService.cs            # SMS/Email OTP
+│   └── ...
+├── Data/
+│   └── ApplicationDbContext.cs  # EF Core context
+└── appsettings.json             # Configuration
+```
+
+---
+
+## Building a New Site
+
+When creating a new pickleball.* site:
+
+1. **Register site in admin**: Add via `/admin` > Sites tab
+2. **Share JWT config**: Use same `Jwt:Key`, `Jwt:Issuer`, `Jwt:Audience`
+3. **Add to allowed domains**: Update `frontend/auth-ui/src/utils/redirect.ts`
+4. **Implement callback**: Handle `?token=...` on your auth callback route
+5. **Validate tokens**: Use the validation code above
+6. **Check site membership**: Verify user belongs to your site via `sites` claim or DB
+
+### Callback Route Example (ASP.NET Core)
+```csharp
+[HttpGet("/auth/callback")]
+public IActionResult AuthCallback([FromQuery] string token, [FromQuery] string? returnTo)
+{
+    var (isValid, userId, email, phone, role, sites) = _jwtService.ValidateToken(token);
+
+    if (!isValid)
+        return Redirect("/login?error=invalid_token");
+
+    // Check if user belongs to this site
+    if (sites == null || !sites.Contains("community"))
+        return Redirect("/login?error=no_access");
+
+    // Create session/cookie
+    HttpContext.Session.SetInt32("UserId", userId.Value);
+    HttpContext.Session.SetString("Email", email ?? "");
+
+    return Redirect(returnTo ?? "/dashboard");
+}
+```
+
+---
+
+## API Response Formats
+
+### Successful Auth Response
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": 42,
+    "email": "user@example.com",
+    "phoneNumber": "+15551234567",
+    "systemRole": null
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+### Site List Response (GET /auth/sites)
+```json
+[
+  {
+    "key": "community",
+    "name": "Community",
+    "description": "Connect with pickleball players",
+    "url": "https://pickleball.community",
+    "logoUrl": "/asset/5"
+  },
+  {
+    "key": "college",
+    "name": "College",
+    "description": "College pickleball leagues",
+    "url": "https://pickleball.college",
+    "logoUrl": "/asset/6"
+  }
+]
+```
