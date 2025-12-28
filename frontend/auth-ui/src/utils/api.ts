@@ -356,6 +356,7 @@ export const adminApi = {
   // Payments
   async getPayments(filters?: {
     userId?: number;
+    userSearch?: string;
     siteKey?: string;
     status?: string;
     fromDate?: string;
@@ -365,6 +366,7 @@ export const adminApi = {
   }): Promise<AdminPaymentList> {
     const params = new URLSearchParams();
     if (filters?.userId) params.set('userId', filters.userId.toString());
+    if (filters?.userSearch) params.set('userSearch', filters.userSearch);
     if (filters?.siteKey) params.set('siteKey', filters.siteKey);
     if (filters?.status) params.set('status', filters.status);
     if (filters?.fromDate) params.set('fromDate', filters.fromDate);
@@ -374,6 +376,34 @@ export const adminApi = {
 
     return request(`/admin/payments?${params}`, {
       headers: getAuthHeaders(),
+    });
+  },
+
+  // Manual charge
+  async manualCharge(request: {
+    userId: number;
+    amountCents: number;
+    currency?: string;
+    description: string;
+    siteKey?: string;
+  }): Promise<{
+    paymentId: number;
+    stripePaymentIntentId?: string;
+    status: string;
+    amountCents: number;
+    currency: string;
+    clientSecret?: string;
+  }> {
+    return request(`/admin/payments/charge`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        userId: request.userId,
+        amountCents: request.amountCents,
+        currency: request.currency || 'usd',
+        description: request.description,
+        siteKey: request.siteKey,
+      }),
     });
   },
 };

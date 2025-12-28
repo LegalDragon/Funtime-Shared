@@ -451,6 +451,7 @@ public class AdminController : ControllerBase
     [HttpGet("payments")]
     public async Task<ActionResult<AdminPaymentListResponse>> GetPayments(
         [FromQuery] int? userId,
+        [FromQuery] string? userSearch,
         [FromQuery] string? siteKey,
         [FromQuery] string? status,
         [FromQuery] DateTime? fromDate,
@@ -466,6 +467,13 @@ public class AdminController : ControllerBase
         if (userId.HasValue)
         {
             query = query.Where(p => p.PaymentCustomer.UserId == userId.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(userSearch))
+        {
+            var searchLower = userSearch.ToLower();
+            query = query.Where(p =>
+                (p.PaymentCustomer.User.Email != null && p.PaymentCustomer.User.Email.ToLower().Contains(searchLower)) ||
+                (p.PaymentCustomer.User.PhoneNumber != null && p.PaymentCustomer.User.PhoneNumber.Contains(userSearch)));
         }
         if (!string.IsNullOrWhiteSpace(siteKey))
         {

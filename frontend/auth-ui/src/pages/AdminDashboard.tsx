@@ -37,6 +37,17 @@ export function AdminDashboardPage() {
   const [paymentUserSearch, setPaymentUserSearch] = useState('');
   const [paymentSiteFilter, setPaymentSiteFilter] = useState('');
 
+  // Manual charge modal state
+  const [showChargeModal, setShowChargeModal] = useState(false);
+  const [chargeAmount, setChargeAmount] = useState('');
+  const [chargeDescription, setChargeDescription] = useState('');
+  const [chargeSiteKey, setChargeSiteKey] = useState('');
+  const [isCharging, setIsCharging] = useState(false);
+
+  // User payments state (for user detail modal)
+  const [userPayments, setUserPayments] = useState<AdminPayment[]>([]);
+  const [userPaymentsLoading, setUserPaymentsLoading] = useState(false);
+
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     window.location.href = '/login';
@@ -92,9 +103,12 @@ export function AdminDashboardPage() {
 
   const loadUserDetail = async (id: number) => {
     setIsLoading(true);
+    setUserPayments([]);
     try {
       const data = await adminApi.getUser(id);
       setSelectedUser(data);
+      // Also load full payment history
+      handleLoadUserPayments(id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user');
     } finally {
@@ -102,11 +116,11 @@ export function AdminDashboardPage() {
     }
   };
 
-  const loadPayments = async (userId?: number, siteKey?: string, page = 1) => {
+  const loadPayments = async (userSearch?: string, siteKey?: string, page = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await adminApi.getPayments({ userId, siteKey, page });
+      const data = await adminApi.getPayments({ userSearch, siteKey, page });
       setPayments(data.payments);
       setPaymentsTotalCount(data.totalCount);
       setPaymentsTotalAmount(data.totalAmountCents);
@@ -118,13 +132,67 @@ export function AdminDashboardPage() {
     }
   };
 
+  const loadUserPayments = async (userId: number, page = 1) => {
+    setIsLoading(true);
+    try {
+      const data = await adminApi.getPayments({ userId, page, pageSize: 10 });
+      return data;
+    } catch (err) {
+      console.error('Failed to load user payments:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSearchUsers = () => {
     loadUsers(userSearch, userSiteFilter);
   };
 
   const handleSearchPayments = () => {
-    const userId = paymentUserSearch ? parseInt(paymentUserSearch, 10) : undefined;
-    loadPayments(isNaN(userId!) ? undefined : userId, paymentSiteFilter || undefined);
+    loadPayments(paymentUserSearch || undefined, paymentSiteFilter || undefined);
+  };
+
+  const handleLoadUserPayments = async (userId: number) => {
+    setUserPaymentsLoading(true);
+    try {
+      const data = await adminApi.getPayments({ userId, pageSize: 50 });
+      setUserPayments(data.payments);
+    } catch (err) {
+      console.error('Failed to load user payments:', err);
+    } finally {
+      setUserPaymentsLoading(false);
+    }
+  };
+
+  const handleManualCharge = async () => {
+    if (!selectedUser || !chargeAmount || !chargeDescription) return;
+
+    const amountCents = Math.round(parseFloat(chargeAmount) * 100);
+    if (isNaN(amountCents) || amountCents <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    setIsCharging(true);
+    try {
+      await adminApi.manualCharge({
+        userId: selectedUser.id,
+        amountCents,
+        description: chargeDescription,
+        siteKey: chargeSiteKey || undefined,
+      });
+      setShowChargeModal(false);
+      setChargeAmount('');
+      setChargeDescription('');
+      setChargeSiteKey('');
+      // Reload user payments
+      handleLoadUserPayments(selectedUser.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create charge');
+    } finally {
+      setIsCharging(false);
+    }
   };
 
   const handleUpdateSite = async (key: string, updates: Partial<Site>) => {
@@ -532,26 +600,50 @@ export function AdminDashboardPage() {
                       </div>
                     )}
 
-                    {selectedUser.recentPayments.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Recent Payments</h4>
-                        <div className="space-y-2">
-                          {selectedUser.recentPayments.map((payment) => (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-gray-900">Payment History</h4>
+                        <button
+                          onClick={() => setShowChargeModal(true)}
+                          className="px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+                        >
+                          + Add Charge
+                        </button>
+                      </div>
+                      {userPaymentsLoading ? (
+                        <div className="text-center py-4">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto text-gray-400" />
+                        </div>
+                      ) : userPayments.length > 0 ? (
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {userPayments.map((payment) => (
                             <div key={payment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                               <div>
                                 <span className="font-medium">{formatCurrency(payment.amountCents)}</span>
                                 <span className="text-sm text-gray-500 ml-2">{formatDate(payment.createdAt)}</span>
+                                {payment.description && (
+                                  <p className="text-xs text-gray-400 mt-0.5">{payment.description}</p>
+                                )}
                               </div>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                payment.status === 'succeeded' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {payment.status}
-                              </span>
+                              <div className="text-right">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  payment.status === 'succeeded' ? 'bg-green-100 text-green-700' :
+                                  payment.status === 'requires_payment_method' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {payment.status}
+                                </span>
+                                {payment.siteKey && (
+                                  <p className="text-xs text-gray-400 mt-0.5">{payment.siteKey}</p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">No payments yet</p>
+                      )}
+                    </div>
 
                     <div className="pt-4 border-t flex gap-2">
                       <button
@@ -564,6 +656,77 @@ export function AdminDashboardPage() {
                         {selectedUser.systemRole === 'SU' ? 'Remove Admin' : 'Make Admin'}
                       </button>
                     </div>
+
+                    {/* Manual Charge Modal */}
+                    {showChargeModal && (
+                      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full m-4">
+                          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Create Manual Charge</h3>
+                            <button onClick={() => setShowChargeModal(false)} className="text-gray-400 hover:text-gray-600">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="p-6 space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Amount (USD)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="0.00"
+                                value={chargeAmount}
+                                onChange={(e) => setChargeAmount(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                              <input
+                                type="text"
+                                placeholder="e.g., Tournament registration fee"
+                                value={chargeDescription}
+                                onChange={(e) => setChargeDescription(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Site (optional)</label>
+                              <select
+                                value={chargeSiteKey}
+                                onChange={(e) => setChargeSiteKey(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              >
+                                <option value="">No site</option>
+                                {sites.map((site) => (
+                                  <option key={site.key} value={site.key}>
+                                    {site.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              This will create a payment intent. The user will need to complete payment through their payment method.
+                            </p>
+                            <div className="flex gap-2 pt-2">
+                              <button
+                                onClick={() => setShowChargeModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleManualCharge}
+                                disabled={isCharging || !chargeAmount || !chargeDescription}
+                                className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50"
+                              >
+                                {isCharging ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `Charge ${chargeAmount ? formatCurrency(parseFloat(chargeAmount) * 100) : '$0.00'}`}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -586,11 +749,11 @@ export function AdminDashboardPage() {
               <div className="mt-4 flex gap-2">
                 <input
                   type="text"
-                  placeholder="User ID..."
+                  placeholder="Search by email or phone..."
                   value={paymentUserSearch}
                   onChange={(e) => setPaymentUserSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchPayments()}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <select
                   value={paymentSiteFilter}
@@ -666,20 +829,14 @@ export function AdminDashboardPage() {
                 <p className="text-sm text-gray-500">Page {paymentsPage}</p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      const userId = paymentUserSearch ? parseInt(paymentUserSearch, 10) : undefined;
-                      loadPayments(isNaN(userId!) ? undefined : userId, paymentSiteFilter || undefined, paymentsPage - 1);
-                    }}
+                    onClick={() => loadPayments(paymentUserSearch || undefined, paymentSiteFilter || undefined, paymentsPage - 1)}
                     disabled={paymentsPage <= 1}
                     className="px-3 py-1 border rounded disabled:opacity-50"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => {
-                      const userId = paymentUserSearch ? parseInt(paymentUserSearch, 10) : undefined;
-                      loadPayments(isNaN(userId!) ? undefined : userId, paymentSiteFilter || undefined, paymentsPage + 1);
-                    }}
+                    onClick={() => loadPayments(paymentUserSearch || undefined, paymentSiteFilter || undefined, paymentsPage + 1)}
                     disabled={payments.length < 20}
                     className="px-3 py-1 border rounded disabled:opacity-50"
                   >
