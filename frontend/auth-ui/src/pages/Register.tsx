@@ -31,6 +31,7 @@ export function RegisterPage() {
   // Logo state
   const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
   const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+  const [foundSiteName, setFoundSiteName] = useState<string | null>(null);
 
   useEffect(() => {
     loadLogos();
@@ -48,8 +49,11 @@ export function RegisterPage() {
       if (siteKey) {
         const sites = await authApi.getSites();
         const site = sites.find(s => s.key.toLowerCase() === siteKey.toLowerCase());
-        if (site?.logoUrl) {
-          setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+        if (site) {
+          setFoundSiteName(site.name);
+          if (site.logoUrl) {
+            setSiteLogoUrl(settingsApi.getLogoDisplayUrl(site.logoUrl));
+          }
         }
       }
     } catch (error) {
@@ -59,12 +63,9 @@ export function RegisterPage() {
 
   // Get site display title (e.g., "Pickleball.Community" or "Funtime Pickleball")
   const getSiteTitle = () => {
-    if (siteKey) {
-      const parts = siteKey.split('-');
-      if (parts[0]?.toLowerCase() === 'pickleball' && parts[1]) {
-        return `Pickleball.${parts[1].charAt(0).toUpperCase()}${parts[1].slice(1)}`;
-      }
-      return siteName;
+    if (foundSiteName) {
+      // Site found - use "Pickleball.SiteName" format
+      return `Pickleball.${foundSiteName}`;
     }
     return 'Funtime Pickleball';
   };
@@ -147,7 +148,7 @@ export function RegisterPage() {
             siteName={siteName}
             size="xl"
           />
-          <div>
+          <div className="flex-1 text-center">
             <h1 className="text-2xl font-bold text-gray-900">{getSiteTitle()}</h1>
             <h2 className="text-lg text-gray-600">Create account</h2>
             {returnTo && (
