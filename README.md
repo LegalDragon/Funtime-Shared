@@ -43,12 +43,148 @@ A shared React component library published as an npm package:
 - **Subscriptions** - Recurring subscription records
 
 ## Consumer Sites (Separate Repos)
-- **pickleball.community** - Community features
-- **pickleball.college** - Educational content
-- **pickleball.date** - Dating/social matching
-- **pickleball.jobs** - Job board
+
+| Site | Site Key | Description |
+|------|----------|-------------|
+| pickleball.community | `community` | Community features |
+| pickleball.college | `college` | Educational content |
+| pickleball.date | `date` | Dating/social matching |
+| pickleball.jobs | `jobs` | Job board |
+| pickleball.casino | `casino` | Gaming features |
 
 Each site has its own database but references UserId from the shared FuntimeIdentity database.
+
+---
+
+## Quick Start for Pickleball Sites
+
+**Copy this into your site's codebase to get started immediately.**
+
+### 1. Environment Variables
+
+```env
+# .env.local (development)
+NEXT_PUBLIC_IDENTITY_API_URL=http://localhost:5000
+NEXT_PUBLIC_SITE_KEY=community  # Change to: community, college, date, jobs, casino
+
+# .env.production
+NEXT_PUBLIC_IDENTITY_API_URL=https://identity.funtimepickleball.com
+NEXT_PUBLIC_SITE_KEY=community  # Your site's key
+```
+
+### 2. Create `src/lib/funtime.ts`
+
+```typescript
+import { initFuntimeClient } from '@funtime/ui';
+
+const SITE_KEY = process.env.NEXT_PUBLIC_SITE_KEY || 'community';
+const API_URL = process.env.NEXT_PUBLIC_IDENTITY_API_URL || 'http://localhost:5000';
+
+export { SITE_KEY, API_URL };
+
+// Initialize once at app startup
+if (typeof window !== 'undefined') {
+  initFuntimeClient({
+    baseUrl: API_URL,
+    getToken: () => localStorage.getItem('funtime_token'),
+    onUnauthorized: () => {
+      localStorage.removeItem('funtime_token');
+      window.location.href = '/login';
+    },
+  });
+}
+```
+
+### 3. Import in `_app.tsx` or `main.tsx`
+
+```typescript
+import '../lib/funtime';  // Initialize before anything else
+import '@funtime/ui/styles.css';
+```
+
+### 4. Ready-to-Use Login Page
+
+```typescript
+// pages/login.tsx
+import { AuthForm, useAuth } from '@funtime/ui';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { SITE_KEY } from '../lib/funtime';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) router.push('/dashboard');
+  }, [isAuthenticated, router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <AuthForm
+        mode="login"
+        siteKey={SITE_KEY}
+        showOtpOption={true}
+        onSuccess={(token) => {
+          localStorage.setItem('funtime_token', token);
+          router.push('/dashboard');
+        }}
+      />
+    </div>
+  );
+}
+```
+
+### 5. Protected Page Example
+
+```typescript
+// pages/dashboard.tsx
+import { useAuth, useSites, Avatar } from '@funtime/ui';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { SITE_KEY, API_URL } from '../lib/funtime';
+
+export default function Dashboard() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { checkMembership } = useSites();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!user) return null;
+
+  // Build avatar URL (assets use relative paths)
+  const avatarUrl = user.avatarUrl ? `${API_URL}${user.avatarUrl}` : undefined;
+
+  return (
+    <div>
+      <Avatar src={avatarUrl} name={user.displayName} size="lg" />
+      <h1>Welcome, {user.displayName || user.email}</h1>
+      <button onClick={logout}>Logout</button>
+    </div>
+  );
+}
+```
+
+### 6. Storing Asset URLs in Your Database
+
+When uploading assets through the shared API, store the **relative URL** returned:
+
+```typescript
+// Asset upload returns: { assetId: 123, url: "/asset/123" }
+// Store "/asset/123" in your database
+
+// When displaying, prepend your configured API URL:
+const fullUrl = `${API_URL}${storedAssetUrl}`;
+// Result: "https://identity.funtimepickleball.com/asset/123"
+```
+
+---
 
 ## Getting Started
 
