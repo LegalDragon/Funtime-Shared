@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
 import { authApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey, redirectWithToken, getRedirectUrl } from '../utils/redirect';
+import { MainLogo } from '../components/MainLogo';
 
 type Step = 'input' | 'code' | 'password' | 'create-account' | 'success' | 'account-created';
 type RecoveryMode = 'email' | 'phone';

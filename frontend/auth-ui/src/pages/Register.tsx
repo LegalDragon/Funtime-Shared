@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus, Mail, Phone, Loader2 } from 'lucide-react';
 import { authApi } from '../utils/api';
 import { redirectWithToken, getSiteDisplayName, getSiteKey, getReturnTo } from '../utils/redirect';
+import { MainLogo } from '../components/MainLogo';
 
 type AuthMode = 'email' | 'phone';
 
@@ -99,8 +100,8 @@ export function RegisterPage() {
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo and Site Info */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
-            <span className="text-white text-2xl font-bold">F</span>
+          <div className="mb-4">
+            <MainLogo size="md" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
           <p className="text-sm text-gray-500 mt-1">

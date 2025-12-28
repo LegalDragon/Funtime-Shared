@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn, Mail, Phone, Loader2, MessageSquare } from 'lucide-react';
 import { authApi } from '../utils/api';
 import { redirectWithToken, getSiteDisplayName, getSiteKey, getReturnTo, getRedirectUrl } from '../utils/redirect';
+import { MainLogo } from '../components/MainLogo';
 
 type AuthMode = 'email' | 'phone';
 type PhoneAuthMethod = 'password' | 'otp';
@@ -144,8 +145,8 @@ export function LoginPage() {
       <div className="max-w-md w-full animate-fade-in">
         {/* Logo and Site Info */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-soft">
-            <span className="text-white text-2xl font-bold">F</span>
+          <div className="mb-4">
+            <MainLogo size="md" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Sign in to {siteName}</h1>
           {returnTo && (
