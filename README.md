@@ -184,6 +184,63 @@ const fullUrl = `${API_URL}${storedAssetUrl}`;
 // Result: "https://identity.funtimepickleball.com/asset/123"
 ```
 
+### 7. Payment Processing with Stripe
+
+The shared UI includes a `PaymentModal` component for Stripe payments:
+
+```env
+# Add to your .env.local
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_KEY
+```
+
+```typescript
+import { useState } from 'react';
+import { PaymentModal, funtimeApi } from '@funtime/ui';
+import { API_URL } from '../lib/funtime';
+
+const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
+
+function CheckoutPage({ amountCents, description }: { amountCents: number; description: string }) {
+  const [clientSecret, setClientSecret] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
+
+  const handleCheckout = async () => {
+    // Create payment intent via the shared API
+    const result = await funtimeApi.payments.createPayment(amountCents, description, 'community');
+    setClientSecret(result.clientSecret);
+    setShowPayment(true);
+  };
+
+  return (
+    <>
+      <button onClick={handleCheckout}>Pay ${(amountCents / 100).toFixed(2)}</button>
+
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        clientSecret={clientSecret}
+        stripePublishableKey={STRIPE_KEY}
+        amountCents={amountCents}
+        description={description}
+        onPaymentSuccess={(paymentIntentId) => {
+          console.log('Payment succeeded:', paymentIntentId);
+          // Redirect to success page or update UI
+        }}
+        onPaymentError={(error) => {
+          console.error('Payment failed:', error);
+        }}
+      />
+    </>
+  );
+}
+```
+
+The `PaymentModal` supports:
+- **Saved payment methods** - Pass `savedPaymentMethods` prop to show user's stored cards
+- **New card entry** - Stripe Elements form for entering new card details
+- **Success/error handling** - Callbacks for payment completion
+- **Custom styling** - Inherits Tailwind styles
+
 ---
 
 ## Getting Started
