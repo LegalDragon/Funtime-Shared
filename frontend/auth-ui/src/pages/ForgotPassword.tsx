@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
 import { authApi, settingsApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey, redirectWithToken, getRedirectUrl } from '../utils/redirect';
 import { SiteLogoOverlay } from '../components/SiteLogoOverlay';
