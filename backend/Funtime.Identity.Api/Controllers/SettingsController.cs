@@ -204,7 +204,7 @@ public class SettingsController : ControllerBase
 
         return Ok(new LogoUrlResponse
         {
-            LogoUrl = siteRecord.LogoUrl
+            LogoUrl = NormalizeAssetUrl(siteRecord.LogoUrl)
         });
     }
 
@@ -243,7 +243,7 @@ public class SettingsController : ControllerBase
 
             if (siteRecord != null)
             {
-                response.SiteLogoUrl = siteRecord.LogoUrl;
+                response.SiteLogoUrl = NormalizeAssetUrl(siteRecord.LogoUrl);
                 response.SiteName = siteRecord.Name;
             }
         }
@@ -285,7 +285,8 @@ public class SettingsController : ControllerBase
 
             if (siteRecord != null)
             {
-                siteLogoUrl = siteRecord.LogoUrl;
+                // Normalize logo URL to relative path (strip any host prefix)
+                siteLogoUrl = NormalizeAssetUrl(siteRecord.LogoUrl);
                 siteName = siteRecord.Name;
             }
         }
@@ -566,6 +567,28 @@ public class SettingsController : ControllerBase
     {
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
         return int.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+
+    /// <summary>
+    /// Normalize asset URL to relative path.
+    /// Converts "http://localhost:5000/asset/123" to "/asset/123"
+    /// </summary>
+    private static string? NormalizeAssetUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+
+        // If already a relative path, return as-is
+        if (url.StartsWith("/asset/")) return url;
+
+        // Extract /asset/{id} from full URL
+        var assetIndex = url.IndexOf("/asset/", StringComparison.OrdinalIgnoreCase);
+        if (assetIndex >= 0)
+        {
+            return url.Substring(assetIndex);
+        }
+
+        // Return original if no /asset/ found
+        return url;
     }
 }
 
