@@ -252,6 +252,89 @@ public class SettingsController : ControllerBase
     }
 
     /// <summary>
+    /// Get HTML element for logo overlay display (public endpoint)
+    /// Returns ready-to-use HTML with main logo and site logo overlay.
+    /// Strips "pickleball." prefix if present.
+    /// </summary>
+    [HttpGet("logo-html")]
+    [AllowAnonymous]
+    public async Task<ContentResult> GetLogoHtml([FromQuery] string? site, [FromQuery] string? size = "md")
+    {
+        // Strip "pickleball." prefix if present
+        var siteKey = site;
+        if (!string.IsNullOrEmpty(siteKey) && siteKey.StartsWith("pickleball.", StringComparison.OrdinalIgnoreCase))
+        {
+            siteKey = siteKey.Substring("pickleball.".Length);
+        }
+
+        // Get main logo
+        var mainLogo = await _context.Assets
+            .Where(a => a.Category == MainLogoCategory && a.SiteKey == MainLogoSiteKey)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        string? mainLogoUrl = mainLogo != null ? $"/asset/{mainLogo.Id}" : null;
+        string? siteLogoUrl = null;
+        string siteName = "Site";
+
+        // Get site logo if site key provided
+        if (!string.IsNullOrWhiteSpace(siteKey))
+        {
+            var siteRecord = await _context.Sites
+                .FirstOrDefaultAsync(s => s.Key.ToLower() == siteKey.ToLower());
+
+            if (siteRecord != null)
+            {
+                siteLogoUrl = siteRecord.LogoUrl;
+                siteName = siteRecord.Name;
+            }
+        }
+
+        // Size classes
+        var (containerSize, overlaySize) = size?.ToLower() switch
+        {
+            "sm" => ("height:2rem", "height:1rem;width:1rem"),
+            "lg" => ("height:3.5rem", "height:1.75rem;width:1.75rem"),
+            "xl" => ("height:5rem", "height:2.5rem;width:2.5rem"),
+            _ => ("height:2.5rem", "height:1.25rem;width:1.25rem") // md default
+        };
+
+        // Build HTML
+        string html;
+        if (mainLogoUrl == null && siteLogoUrl == null)
+        {
+            // Fallback - no logos
+            html = $@"<div style=""display:inline-flex;align-items:center;justify-content:center;{containerSize};aspect-ratio:1;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:0.5rem"">
+  <span style=""color:white;font-weight:bold;font-size:1.25rem"">{siteName[0]}</span>
+</div>";
+        }
+        else if (mainLogoUrl != null && siteLogoUrl != null)
+        {
+            // Both logos - overlay effect
+            html = $@"<div style=""position:relative;display:inline-block;{containerSize}"">
+  <img src=""{mainLogoUrl}"" alt=""Main logo"" style=""width:100%;height:100%;object-fit:contain"" />
+  <img src=""{siteLogoUrl}"" alt=""{siteName} logo"" style=""position:absolute;bottom:0;right:0;{overlaySize};object-fit:contain"" />
+</div>";
+        }
+        else if (mainLogoUrl != null)
+        {
+            // Main logo only
+            html = $@"<div style=""display:inline-block;{containerSize}"">
+  <img src=""{mainLogoUrl}"" alt=""Main logo"" style=""width:100%;height:100%;object-fit:contain"" />
+</div>";
+        }
+        else
+        {
+            // Site logo only
+            html = $@"<div style=""display:inline-block;{containerSize}"">
+  <img src=""{siteLogoUrl}"" alt=""{siteName} logo"" style=""width:100%;height:100%;object-fit:contain"" />
+</div>";
+        }
+
+        return Content(html, "text/html");
+    }
+
+    /// <summary>
     /// Get Terms of Service content (public endpoint)
     /// </summary>
     [HttpGet("terms-of-service")]

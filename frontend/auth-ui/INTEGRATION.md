@@ -180,6 +180,7 @@ POST /auth/password-reset/register  - Quick register (from reset flow)
 GET /settings/logo                  - Get main logo info
 GET /settings/logo-url?site={key}   - Get logo URL by site key (see below)
 GET /settings/logo-overlay?site={key} - Get both main and site logos (see below)
+GET /settings/logo-html?site={key}&size={size} - Get ready-to-use HTML (see below)
 GET /settings/terms-of-service      - Get Terms of Service
 GET /settings/privacy-policy        - Get Privacy Policy
 ```
@@ -220,6 +221,50 @@ Response:
 ```
 
 Use this to build full URLs: `https://shared.funtimepb.com/api/asset/3`
+
+#### Logo HTML Endpoint
+
+Get ready-to-use HTML for displaying logo with overlay:
+
+```
+GET /settings/logo-html                    → Returns main logo HTML
+GET /settings/logo-html?site=community     → Returns overlay HTML (main + site logo)
+GET /settings/logo-html?site=community&size=lg → With size parameter
+```
+
+**Size Parameter:**
+| Size | Container Height | Overlay Size |
+|------|-----------------|--------------|
+| `sm` | 2rem | 1rem × 1rem |
+| `md` | 2.5rem (default) | 1.25rem × 1.25rem |
+| `lg` | 3.5rem | 1.75rem × 1.75rem |
+| `xl` | 5rem | 2.5rem × 2.5rem |
+
+Response (Content-Type: text/html):
+```html
+<div style="position:relative;display:inline-block;height:2.5rem">
+  <img src="/asset/3" alt="Main logo" style="width:100%;height:100%;object-fit:contain" />
+  <img src="/asset/5" alt="Community logo" style="position:absolute;bottom:0;right:0;height:1.25rem;width:1.25rem;object-fit:contain" />
+</div>
+```
+
+**Usage in calling sites:**
+```javascript
+// Fetch and insert logo HTML
+fetch('https://shared.funtimepb.com/api/settings/logo-html?site=community&size=lg')
+  .then(res => res.text())
+  .then(html => {
+    document.getElementById('logo-container').innerHTML = html;
+  });
+```
+
+```html
+<!-- Or use an iframe -->
+<iframe
+  src="https://shared.funtimepb.com/api/settings/logo-html?site=community&size=lg"
+  style="border:none;height:3.5rem"
+></iframe>
+```
 
 ### Admin Endpoints (Require Bearer Token)
 
