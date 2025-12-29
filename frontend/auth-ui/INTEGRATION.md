@@ -179,6 +179,7 @@ POST /auth/password-reset/register  - Quick register (from reset flow)
 ```
 GET /settings/logo                  - Get main logo info
 GET /settings/logo-url?site={key}   - Get logo URL by site key (see below)
+GET /settings/logo-overlay?site={key} - Get both main and site logos (see below)
 GET /settings/terms-of-service      - Get Terms of Service
 GET /settings/privacy-policy        - Get Privacy Policy
 ```
@@ -200,7 +201,25 @@ Response:
 }
 ```
 
-Use this to build the full URL: `https://shared.funtimepb.com/api/asset/5`
+#### Logo Overlay Endpoint
+
+Get both main logo and site logo for overlay display:
+
+```
+GET /settings/logo-overlay              → Returns main logo only
+GET /settings/logo-overlay?site=community → Returns both main and site logos
+```
+
+Response:
+```json
+{
+  "mainLogoUrl": "/asset/3",
+  "siteLogoUrl": "/asset/5",
+  "siteName": "Community"
+}
+```
+
+Use this to build full URLs: `https://shared.funtimepb.com/api/asset/3`
 
 ### Admin Endpoints (Require Bearer Token)
 

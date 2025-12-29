@@ -209,6 +209,49 @@ public class SettingsController : ControllerBase
     }
 
     /// <summary>
+    /// Get both main logo and site logo for overlay display (public endpoint)
+    /// Returns mainLogoUrl and siteLogoUrl based on site key.
+    /// Strips "pickleball." prefix if present.
+    /// </summary>
+    [HttpGet("logo-overlay")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LogoOverlayResponse>> GetLogoOverlay([FromQuery] string? site)
+    {
+        // Strip "pickleball." prefix if present
+        var siteKey = site;
+        if (!string.IsNullOrEmpty(siteKey) && siteKey.StartsWith("pickleball.", StringComparison.OrdinalIgnoreCase))
+        {
+            siteKey = siteKey.Substring("pickleball.".Length);
+        }
+
+        // Get main logo
+        var mainLogo = await _context.Assets
+            .Where(a => a.Category == MainLogoCategory && a.SiteKey == MainLogoSiteKey)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        var response = new LogoOverlayResponse
+        {
+            MainLogoUrl = mainLogo != null ? $"/asset/{mainLogo.Id}" : null
+        };
+
+        // Get site logo if site key provided
+        if (!string.IsNullOrWhiteSpace(siteKey))
+        {
+            var siteRecord = await _context.Sites
+                .FirstOrDefaultAsync(s => s.Key.ToLower() == siteKey.ToLower());
+
+            if (siteRecord != null)
+            {
+                response.SiteLogoUrl = siteRecord.LogoUrl;
+                response.SiteName = siteRecord.Name;
+            }
+        }
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Get Terms of Service content (public endpoint)
     /// </summary>
     [HttpGet("terms-of-service")]
@@ -348,4 +391,11 @@ public class LegalContentRequest
 public class LogoUrlResponse
 {
     public string? LogoUrl { get; set; }
+}
+
+public class LogoOverlayResponse
+{
+    public string? MainLogoUrl { get; set; }
+    public string? SiteLogoUrl { get; set; }
+    public string? SiteName { get; set; }
 }
