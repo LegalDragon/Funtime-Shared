@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, LogOut, Loader2 } from 'lucide-react';
-import { authApi, type PublicSite } from '../utils/api';
+import { authApi, settingsApi, type PublicSite } from '../utils/api';
 
 // Fallback gradient colors for sites without logos
 const fallbackColors: Record<string, string> = {
@@ -88,7 +88,7 @@ export function SiteSelectionPage() {
                     {/* Logo or fallback icon */}
                     {site.logoUrl ? (
                       <img
-                        src={site.logoUrl}
+                        src={settingsApi.getLogoDisplayUrl(site.logoUrl)}
                         alt={`${site.name} logo`}
                         className="w-12 h-12 object-contain rounded-lg"
                       />
