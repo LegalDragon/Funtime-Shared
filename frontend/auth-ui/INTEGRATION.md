@@ -244,10 +244,12 @@ GET /settings/logo-html?site=community&size=lg → With size parameter
 Response (Content-Type: text/html):
 ```html
 <div style="position:relative;display:inline-block;height:2.5rem">
-  <img src="/asset/3" alt="Main logo" style="width:100%;height:100%;object-fit:contain" />
-  <img src="/asset/5" alt="Community logo" style="position:absolute;bottom:0;right:0;height:1.25rem;width:1.25rem;object-fit:contain" />
+  <img src="https://shared.funtimepb.com/api/asset/3" alt="Main logo" style="width:100%;height:100%;object-fit:contain" />
+  <img src="https://shared.funtimepb.com/api/asset/5" alt="Community logo" style="position:absolute;bottom:0;right:0;height:1.25rem;width:1.25rem;object-fit:contain" />
 </div>
 ```
+
+**Note:** This endpoint returns absolute URLs so the HTML can be embedded directly on other sites.
 
 **Usage in calling sites:**
 ```javascript

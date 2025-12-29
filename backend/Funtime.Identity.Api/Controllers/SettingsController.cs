@@ -254,12 +254,16 @@ public class SettingsController : ControllerBase
     /// <summary>
     /// Get HTML element for logo overlay display (public endpoint)
     /// Returns ready-to-use HTML with main logo and site logo overlay.
+    /// Uses absolute URLs so the HTML can be embedded on other sites.
     /// Strips "pickleball." prefix if present.
     /// </summary>
     [HttpGet("logo-html")]
     [AllowAnonymous]
     public async Task<ContentResult> GetLogoHtml([FromQuery] string? site, [FromQuery] string? size = "md")
     {
+        // Build base URL from current request (for absolute asset URLs)
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
         // Strip "pickleball." prefix if present
         var siteKey = site;
         if (!string.IsNullOrEmpty(siteKey) && siteKey.StartsWith("pickleball.", StringComparison.OrdinalIgnoreCase))
@@ -273,7 +277,8 @@ public class SettingsController : ControllerBase
             .OrderByDescending(a => a.CreatedAt)
             .FirstOrDefaultAsync();
 
-        string? mainLogoUrl = mainLogo != null ? $"/asset/{mainLogo.Id}" : null;
+        // Use absolute URLs for embedding on other sites
+        string? mainLogoUrl = mainLogo != null ? $"{baseUrl}/asset/{mainLogo.Id}" : null;
         string? siteLogoUrl = null;
         string siteName = "Site";
 
@@ -285,8 +290,9 @@ public class SettingsController : ControllerBase
 
             if (siteRecord != null)
             {
-                // Normalize logo URL to relative path (strip any host prefix)
-                siteLogoUrl = NormalizeAssetUrl(siteRecord.LogoUrl);
+                // Normalize logo URL to relative path, then make absolute
+                var relativePath = NormalizeAssetUrl(siteRecord.LogoUrl);
+                siteLogoUrl = relativePath != null ? $"{baseUrl}{relativePath}" : null;
                 siteName = siteRecord.Name;
             }
         }
@@ -300,7 +306,7 @@ public class SettingsController : ControllerBase
             _ => ("height:2.5rem", "height:1.25rem;width:1.25rem") // md default
         };
 
-        // Build HTML
+        // Build HTML with absolute URLs
         string html;
         if (mainLogoUrl == null && siteLogoUrl == null)
         {
