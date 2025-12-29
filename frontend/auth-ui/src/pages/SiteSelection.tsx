@@ -116,18 +116,28 @@ export function SiteSelectionPage() {
                       {isSU && site.url && (
                         <p className="text-gray-400 text-xs mt-1 truncate max-w-[200px]">{site.url}</p>
                       )}
+                      {isSU && !site.url && (
+                        <p className="text-amber-500 text-xs mt-1">URL not configured</p>
+                      )}
                     </div>
                   </div>
                 </div>
                 {/* Action button */}
                 <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={() => handleSiteClick(site.url)}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-gradient-to-r ${getGradient(site.key)} text-white hover:opacity-90`}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Visit Site
-                  </button>
+                  {site.url ? (
+                    <button
+                      onClick={() => handleSiteClick(site.url)}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-gradient-to-r ${getGradient(site.key)} text-white hover:opacity-90`}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Visit Site
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-500 cursor-not-allowed">
+                      <ExternalLink className="w-4 h-4" />
+                      No URL
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

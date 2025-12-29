@@ -543,18 +543,20 @@ export function AdminDashboardPage() {
                 {sites.map((site) => (
                   <div key={site.key} className="p-4 hover:bg-gray-50">
                     <div className="flex items-center gap-4">
-                      {/* Site Logo */}
-                      <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                        {site.logoUrl ? (
-                          <img
-                            src={settingsApi.getLogoDisplayUrl(site.logoUrl)}
-                            alt={`${site.name} logo`}
-                            className="w-full h-full object-cover"
+                      {/* Logo Overlay Preview (main logo + site logo) */}
+                      {(mainLogoUrl || site.logoUrl) ? (
+                        <div className="flex-shrink-0">
+                          <SiteLogoPreview
+                            mainLogoUrl={mainLogoUrl}
+                            siteLogoUrl={site.logoUrl ? settingsApi.getLogoDisplayUrl(site.logoUrl) : null}
+                            siteName={site.name}
                           />
-                        ) : (
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                           <Globe className="w-6 h-6 text-gray-400" />
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900">{site.name}</h3>
                         <p className="text-sm text-gray-500 truncate">{site.key} • {site.url}</p>
@@ -583,17 +585,6 @@ export function AdminDashboardPage() {
                       </button>
                     </div>
                     </div>
-                    {/* Logo Overlay Preview */}
-                    {(mainLogoUrl || site.logoUrl) && (
-                      <div className="mt-3 ml-16">
-                        <p className="text-xs text-gray-400 mb-1">Header Preview:</p>
-                        <SiteLogoPreview
-                          mainLogoUrl={mainLogoUrl}
-                          siteLogoUrl={site.logoUrl ? settingsApi.getLogoDisplayUrl(site.logoUrl) : null}
-                          siteName={site.name}
-                        />
-                      </div>
-                    )}
                   </div>
                 ))}
                 {sites.length === 0 && (
