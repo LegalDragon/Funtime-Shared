@@ -74,7 +74,12 @@ export function LoginPage() {
   };
 
   // Handle successful login - route based on user role and redirect URL
-  const handleLoginSuccess = (token: string, systemRole?: string) => {
+  const handleLoginSuccess = (
+    token: string,
+    systemRole?: string,
+    siteRole?: string,
+    isSiteAdmin?: boolean
+  ) => {
     localStorage.setItem('auth_token', token);
 
     // SU users go to admin dashboard
@@ -83,9 +88,9 @@ export function LoginPage() {
       return;
     }
 
-    // If there's a redirect URL, redirect to that site
+    // If there's a redirect URL, redirect to that site with role info
     if (redirectUrl) {
-      redirectWithToken(token);
+      redirectWithToken(token, { siteRole, isSiteAdmin });
       return;
     }
 
@@ -101,7 +106,12 @@ export function LoginPage() {
     try {
       const response = await authApi.login(email, password, siteKey || undefined);
       if (response.success && response.token) {
-        handleLoginSuccess(response.token, response.user?.systemRole);
+        handleLoginSuccess(
+          response.token,
+          response.user?.systemRole,
+          response.user?.siteRole,
+          response.user?.isSiteAdmin
+        );
       } else {
         setError(response.message || 'Login failed');
       }
@@ -120,7 +130,12 @@ export function LoginPage() {
     try {
       const response = await authApi.loginWithPhone(phoneNumber, phonePassword, siteKey || undefined);
       if (response.success && response.token) {
-        handleLoginSuccess(response.token, response.user?.systemRole);
+        handleLoginSuccess(
+          response.token,
+          response.user?.systemRole,
+          response.user?.siteRole,
+          response.user?.isSiteAdmin
+        );
       } else {
         setError(response.message || 'Login failed');
       }
@@ -158,7 +173,12 @@ export function LoginPage() {
     try {
       const response = await authApi.verifyOtp(phoneNumber, otpCode);
       if (response.success && response.token) {
-        handleLoginSuccess(response.token, response.user?.systemRole);
+        handleLoginSuccess(
+          response.token,
+          response.user?.systemRole,
+          response.user?.siteRole,
+          response.user?.isSiteAdmin
+        );
       } else {
         setError(response.message || 'Invalid code');
       }

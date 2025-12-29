@@ -27,8 +27,11 @@ export function getReturnTo(): string | null {
   return params.get('returnTo');
 }
 
-// Redirect back to the original site with token
-export function redirectWithToken(token: string): void {
+// Redirect back to the original site with token and optional site role info
+export function redirectWithToken(
+  token: string,
+  options?: { siteRole?: string; isSiteAdmin?: boolean }
+): void {
   const redirectUrl = getRedirectUrl();
   const returnTo = getReturnTo();
 
@@ -44,6 +47,14 @@ export function redirectWithToken(token: string): void {
 
   if (returnTo) {
     url.searchParams.set('returnTo', returnTo);
+  }
+
+  // Include site role information if provided
+  if (options?.siteRole) {
+    url.searchParams.set('siteRole', options.siteRole);
+  }
+  if (options?.isSiteAdmin !== undefined) {
+    url.searchParams.set('isSiteAdmin', options.isSiteAdmin.toString());
   }
 
   // Redirect to the callback URL
