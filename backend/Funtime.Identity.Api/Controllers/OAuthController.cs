@@ -43,26 +43,31 @@ public class OAuthController : ControllerBase
             new() {
                 Name = "google",
                 DisplayName = "Google",
-                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Google:ClientId"])
+                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Google:ClientId"]),
+                IsActive = _configuration.GetValue<bool>("OAuth:Google:Active")
             },
             new() {
                 Name = "facebook",
                 DisplayName = "Facebook",
-                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Facebook:ClientId"])
+                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Facebook:ClientId"]),
+                IsActive = _configuration.GetValue<bool>("OAuth:Facebook:Active")
             },
             new() {
                 Name = "apple",
                 DisplayName = "Apple",
-                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Apple:ClientId"])
+                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Apple:ClientId"]),
+                IsActive = _configuration.GetValue<bool>("OAuth:Apple:Active")
             },
             new() {
                 Name = "microsoft",
                 DisplayName = "Microsoft",
-                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Microsoft:ClientId"])
+                IsConfigured = !string.IsNullOrEmpty(_configuration["OAuth:Microsoft:ClientId"]),
+                IsActive = _configuration.GetValue<bool>("OAuth:Microsoft:Active")
             }
         };
 
-        return Ok(providers.Where(p => p.IsConfigured).ToList());
+        // Only return providers that are both configured and active
+        return Ok(providers.Where(p => p.IsConfigured && p.IsActive).ToList());
     }
 
     /// <summary>
@@ -636,6 +641,7 @@ public class OAuthProviderInfo
     public string Name { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public bool IsConfigured { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class OAuthState
