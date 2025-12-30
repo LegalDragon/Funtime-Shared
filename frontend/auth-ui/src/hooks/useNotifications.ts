@@ -90,14 +90,14 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
       // Set up event handlers
       connection.on('ReceiveNotification', handleNotification);
 
-      connection.onclose((err) => {
+      connection.onclose((err: Error | undefined) => {
         setConnectionState(signalR.HubConnectionState.Disconnected);
         if (err) {
           setError(err);
         }
       });
 
-      connection.onreconnecting((err) => {
+      connection.onreconnecting((err: Error | undefined) => {
         setConnectionState(signalR.HubConnectionState.Reconnecting);
         if (err) {
           console.warn('SignalR reconnecting:', err);
