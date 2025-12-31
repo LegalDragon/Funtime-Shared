@@ -441,7 +441,7 @@ export const adminApi = {
     });
   },
 
-  async updateUser(id: number, updates: Partial<AdminUser>): Promise<AdminUser> {
+  async updateUser(id: number, updates: Partial<AdminUser> & { password?: string }): Promise<AdminUser> {
     return request(`/admin/users/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),

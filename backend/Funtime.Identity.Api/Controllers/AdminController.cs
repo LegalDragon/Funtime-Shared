@@ -442,6 +442,11 @@ public class AdminController : ControllerBase
         {
             user.IsPhoneVerified = request.IsPhoneVerified.Value;
         }
+        if (!string.IsNullOrEmpty(request.Password))
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            _logger.LogInformation("Password updated for user {UserId} by admin", user.Id);
+        }
 
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();

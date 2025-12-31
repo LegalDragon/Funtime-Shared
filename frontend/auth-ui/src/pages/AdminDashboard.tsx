@@ -62,6 +62,10 @@ export function AdminDashboardPage() {
   const [userPayments, setUserPayments] = useState<AdminPayment[]>([]);
   const [userPaymentsLoading, setUserPaymentsLoading] = useState(false);
 
+  // Password reset state
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
   // Settings state
   const [mainLogoUrl, setMainLogoUrl] = useState<string | null>(null);
   const [mainLogoLoading, setMainLogoLoading] = useState(false);
@@ -738,7 +742,7 @@ export function AdminDashboardPage() {
                 <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
                   <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="text-lg font-semibold">User Details</h3>
-                    <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={() => { setSelectedUser(null); setNewPassword(''); }} className="text-gray-400 hover:text-gray-600">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -858,6 +862,43 @@ export function AdminDashboardPage() {
                       ) : (
                         <p className="text-sm text-gray-500 text-center py-4">No payments yet</p>
                       )}
+                    </div>
+
+                    {/* Password Reset */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Reset Password</h4>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          placeholder="New password (min 6 characters)"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!newPassword || newPassword.length < 6) {
+                              setError('Password must be at least 6 characters');
+                              return;
+                            }
+                            setSavingPassword(true);
+                            try {
+                              await adminApi.updateUser(selectedUser.id, { password: newPassword });
+                              setNewPassword('');
+                              setError(null);
+                              alert('Password updated successfully');
+                            } catch (err) {
+                              setError(err instanceof Error ? err.message : 'Failed to update password');
+                            } finally {
+                              setSavingPassword(false);
+                            }
+                          }}
+                          disabled={savingPassword || newPassword.length < 6}
+                          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {savingPassword ? 'Saving...' : 'Update'}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="pt-4 border-t flex gap-2">

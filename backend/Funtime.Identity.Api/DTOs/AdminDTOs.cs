@@ -143,6 +143,13 @@ public class UpdateUserRequest
 
     public bool? IsEmailVerified { get; set; }
     public bool? IsPhoneVerified { get; set; }
+
+    /// <summary>
+    /// New password for the user (optional). Will be hashed before saving.
+    /// </summary>
+    [MinLength(6)]
+    [MaxLength(100)]
+    public string? Password { get; set; }
 }
 
 public class UpdateUserSiteRoleRequest
