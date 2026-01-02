@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertCircle, Mail, Phone, RefreshCw, ArrowLeft, LogIn } from 'lucide-react';
-import { verifyApi, authApi } from '../utils/api';
+import { verifyApi } from '../utils/api';
 
 export function VerifyPage() {
   const [searchParams] = useSearchParams();
@@ -42,27 +42,22 @@ export function VerifyPage() {
 
   const checkAuth = async () => {
     try {
-      const profile = await authApi.getProfile();
-      if (profile) {
-        setIsAuthenticated(true);
-        // Get verification status
-        const status = await verifyApi.getStatus();
-        setVerificationStatus({
-          isEmailVerified: status.isEmailVerified,
-          isPhoneVerified: status.isPhoneVerified,
-        });
+      // getStatus() requires auth - will throw if not authenticated
+      const status = await verifyApi.getStatus();
+      setIsAuthenticated(true);
+      setVerificationStatus({
+        isEmailVerified: status.isEmailVerified,
+        isPhoneVerified: status.isPhoneVerified,
+      });
 
-        // Check if already verified
-        const isVerified = type === 'email' ? status.isEmailVerified : status.isPhoneVerified;
-        if (isVerified) {
-          setSuccess(true);
-          setMaskedIdentifier(type === 'email' ? status.email : status.phone);
-        } else {
-          // Send code automatically
-          sendCode();
-        }
+      // Check if already verified
+      const isVerified = type === 'email' ? status.isEmailVerified : status.isPhoneVerified;
+      if (isVerified) {
+        setSuccess(true);
+        setMaskedIdentifier((type === 'email' ? status.email : status.phone) ?? null);
       } else {
-        setIsAuthenticated(false);
+        // Send code automatically
+        sendCode();
       }
     } catch {
       setIsAuthenticated(false);
@@ -251,7 +246,7 @@ export function VerifyPage() {
                 {code.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => (inputRefs.current[index] = el)}
+                    ref={(el) => { inputRefs.current[index] = el; }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
