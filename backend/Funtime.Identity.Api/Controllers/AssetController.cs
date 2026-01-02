@@ -31,6 +31,7 @@ public class AssetController : ControllerBase
     /// </summary>
     [HttpPost("upload")]
     [Authorize]
+    [RequestSizeLimit(150 * 1024 * 1024)] // 150MB limit for video uploads
     public async Task<ActionResult<AssetUploadResponse>> Upload(
         IFormFile file,
         [FromQuery] string? assetType = null,
@@ -43,23 +44,37 @@ public class AssetController : ControllerBase
             return BadRequest(new { message = "No file uploaded." });
         }
 
-        // Validate file size (10MB max)
-        if (file.Length > 10 * 1024 * 1024)
-        {
-            return BadRequest(new { message = "File size must be less than 10MB." });
-        }
-
-        // Validate file type
+        // Validate file type first to determine size limits
         var allowedImageTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml" };
         var allowedDocTypes = new[] { "application/pdf", "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
-        var allowedVideoTypes = new[] { "video/mp4", "video/webm", "video/ogg" };
+        var allowedVideoTypes = new[] {
+            "video/mp4", "video/webm", "video/ogg", "video/quicktime", // .mov
+            "video/x-msvideo", "video/avi", // .avi
+            "video/x-matroska", // .mkv
+            "video/x-m4v", "video/m4v", // .m4v
+            "video/mpeg", // .mpeg
+            "video/x-ms-wmv", // .wmv
+            "video/3gpp", "video/3gpp2" // .3gp
+        };
         var allowedAudioTypes = new[] { "audio/mpeg", "audio/wav", "audio/ogg", "audio/mp3" };
         var allAllowedTypes = allowedImageTypes.Concat(allowedDocTypes).Concat(allowedVideoTypes).Concat(allowedAudioTypes).ToArray();
 
-        if (!allAllowedTypes.Contains(file.ContentType.ToLower()))
+        var contentType = file.ContentType.ToLower();
+        if (!allAllowedTypes.Contains(contentType))
         {
-            return BadRequest(new { message = "Invalid file type." });
+            return BadRequest(new { message = $"Invalid file type: {file.ContentType}. Allowed types: images (jpeg, png, gif, webp, svg), videos (mp4, webm, ogg, mov, avi, mkv, m4v, mpeg, wmv, 3gp), audio (mp3, wav, ogg), documents (pdf, doc, docx)." });
+        }
+
+        // Validate file size based on content type
+        // Videos: 100MB max, Others: 10MB max
+        var isVideo = contentType.StartsWith("video/");
+        var maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+        var maxSizeDisplay = isVideo ? "100MB" : "10MB";
+
+        if (file.Length > maxSize)
+        {
+            return BadRequest(new { message = $"File size must be less than {maxSizeDisplay}." });
         }
 
         // Determine asset type from content type if not specified

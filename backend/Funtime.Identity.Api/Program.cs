@@ -76,6 +76,18 @@ else
     builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 }
 
+// Configure form options for large file uploads (videos up to 100MB)
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 150 * 1024 * 1024; // 150MB
+});
+
+// Configure Kestrel for large uploads
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 150 * 1024 * 1024; // 150MB
+});
+
 // Controllers
 builder.Services.AddControllers();
 
