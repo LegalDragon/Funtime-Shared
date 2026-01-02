@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+using Dapper;
 using Stripe;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.DTOs;
@@ -18,27 +20,27 @@ public class AdminController : ControllerBase
     private readonly IFileStorageService _fileStorageService;
     private readonly IStripeService _stripeService;
     private readonly IOtpService _otpService;
-    private readonly IEmailService _emailService;
-    private readonly ISmsService _smsService;
     private readonly ILogger<AdminController> _logger;
+    private readonly string _notificationConnectionString;
 
     public AdminController(
         ApplicationDbContext context,
         IFileStorageService fileStorageService,
         IStripeService stripeService,
         IOtpService otpService,
-        IEmailService emailService,
-        ISmsService smsService,
+        IConfiguration configuration,
         ILogger<AdminController> logger)
     {
         _context = context;
         _fileStorageService = fileStorageService;
         _stripeService = stripeService;
         _otpService = otpService;
-        _emailService = emailService;
-        _smsService = smsService;
         _logger = logger;
+        _notificationConnectionString = configuration.GetConnectionString("NotificationConnection")
+            ?? throw new InvalidOperationException("NotificationConnection not configured");
     }
+
+    private SqlConnection CreateNotificationConnection() => new SqlConnection(_notificationConnectionString);
 
     #region Sites
 
@@ -600,15 +602,30 @@ public class AdminController : ControllerBase
         var subject = request.Subject ?? "Test Email from Funtime Pickleball";
         var body = request.Message ?? "This is a test email from the Funtime Pickleball admin panel. If you received this, email delivery is working correctly.";
 
-        var success = await _emailService.SendEmailAsync(user.Email, subject, body);
-        if (!success)
+        try
         {
-            return BadRequest(new { message = "Failed to send test email." });
+            using var conn = CreateNotificationConnection();
+            await conn.ExecuteAsync(
+                "exec dbo.csp_SendTestMessage @MessageType, @UserId, @Name, @Email, @PhoneNumber, @Subject, @Body",
+                new
+                {
+                    MessageType = "email",
+                    UserId = user.Id,
+                    Name = user.Email, // Using email as name since User model doesn't have a Name field
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    Subject = subject,
+                    Body = body
+                });
+
+            _logger.LogInformation("Admin queued test email to user {UserId} ({Email})", id, user.Email);
+            return Ok(new { success = true, message = $"Test email queued for {user.Email}." });
         }
-
-        _logger.LogInformation("Admin sent test email to user {UserId} ({Email})", id, user.Email);
-
-        return Ok(new { success = true, message = $"Test email sent to {user.Email}." });
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to queue test email for user {UserId}", id);
+            return BadRequest(new { message = $"Failed to queue test email: {ex.Message}" });
+        }
     }
 
     /// <summary>
@@ -630,15 +647,30 @@ public class AdminController : ControllerBase
 
         var message = request.Message ?? "Test SMS from Funtime Pickleball admin panel.";
 
-        var success = await _smsService.SendSmsAsync(user.PhoneNumber, message);
-        if (!success)
+        try
         {
-            return BadRequest(new { message = "Failed to send test SMS." });
+            using var conn = CreateNotificationConnection();
+            await conn.ExecuteAsync(
+                "exec dbo.csp_SendTestMessage @MessageType, @UserId, @Name, @Email, @PhoneNumber, @Subject, @Body",
+                new
+                {
+                    MessageType = "sms",
+                    UserId = user.Id,
+                    Name = user.Email, // Using email as name since User model doesn't have a Name field
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    Subject = (string?)null,
+                    Body = message
+                });
+
+            _logger.LogInformation("Admin queued test SMS to user {UserId} ({Phone})", id, user.PhoneNumber);
+            return Ok(new { success = true, message = $"Test SMS queued for {user.PhoneNumber}." });
         }
-
-        _logger.LogInformation("Admin sent test SMS to user {UserId} ({Phone})", id, user.PhoneNumber);
-
-        return Ok(new { success = true, message = $"Test SMS sent to {user.PhoneNumber}." });
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to queue test SMS for user {UserId}", id);
+            return BadRequest(new { message = $"Failed to queue test SMS: {ex.Message}" });
+        }
     }
 
     #endregion
