@@ -691,25 +691,46 @@ export function AdminDashboardPage() {
               </div>
               {users.length > 0 ? (
                 <div className="divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <div key={user.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {user.email || user.phoneNumber || `User #${user.id}`}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          ID: {user.id} • Joined {formatDate(user.createdAt)}
-                          {user.systemRole && <span className="ml-2 text-purple-600">({user.systemRole})</span>}
-                        </p>
+                  {users.map((user) => {
+                    const displayName = user.displayName ||
+                      (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` :
+                       user.firstName || user.lastName || null);
+                    const location = [user.city, user.state].filter(Boolean).join(', ');
+
+                    return (
+                      <div key={user.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900 truncate">
+                              {displayName || user.email || user.phoneNumber || `User #${user.id}`}
+                            </p>
+                            {user.systemRole && (
+                              <span className="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700">
+                                {user.systemRole}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                            {displayName && (user.email || user.phoneNumber) && (
+                              <span className="truncate">{user.email || user.phoneNumber}</span>
+                            )}
+                            {location && (
+                              <span className="flex-shrink-0 text-gray-400">• {location}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            ID: {user.id} • Joined {formatDate(user.createdAt)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => loadUserDetail(user.id)}
+                          className="flex-shrink-0 ml-4 text-primary-600 hover:text-primary-700"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => loadUserDetail(user.id)}
-                        className="text-primary-600 hover:text-primary-700"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-8 text-center text-gray-500">

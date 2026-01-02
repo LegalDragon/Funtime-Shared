@@ -315,37 +315,48 @@ public class AdminController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var query = _context.Users.AsQueryable();
+        var query = from u in _context.Users
+                    join p in _context.UserProfiles on u.Id equals p.UserId into profiles
+                    from profile in profiles.DefaultIfEmpty()
+                    select new { User = u, Profile = profile };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.ToLower();
-            query = query.Where(u =>
-                (u.Email != null && u.Email.ToLower().Contains(searchLower)) ||
-                (u.PhoneNumber != null && u.PhoneNumber.Contains(search)));
+            query = query.Where(x =>
+                (x.User.Email != null && x.User.Email.ToLower().Contains(searchLower)) ||
+                (x.User.PhoneNumber != null && x.User.PhoneNumber.Contains(search)) ||
+                (x.Profile != null && x.Profile.FirstName != null && x.Profile.FirstName.ToLower().Contains(searchLower)) ||
+                (x.Profile != null && x.Profile.LastName != null && x.Profile.LastName.ToLower().Contains(searchLower)) ||
+                (x.Profile != null && x.Profile.DisplayName != null && x.Profile.DisplayName.ToLower().Contains(searchLower)));
         }
 
         if (!string.IsNullOrWhiteSpace(siteKey))
         {
-            query = query.Where(u => u.UserSites.Any(us => us.SiteKey == siteKey));
+            query = query.Where(x => x.User.UserSites.Any(us => us.SiteKey == siteKey));
         }
 
         var totalCount = await query.CountAsync();
 
         var users = await query
-            .OrderByDescending(u => u.CreatedAt)
+            .OrderByDescending(x => x.User.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(u => new AdminUserResponse
+            .Select(x => new AdminUserResponse
             {
-                Id = u.Id,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                SystemRole = u.SystemRole,
-                IsEmailVerified = u.IsEmailVerified,
-                IsPhoneVerified = u.IsPhoneVerified,
-                CreatedAt = u.CreatedAt,
-                LastLoginAt = u.LastLoginAt
+                Id = x.User.Id,
+                Email = x.User.Email,
+                PhoneNumber = x.User.PhoneNumber,
+                SystemRole = x.User.SystemRole,
+                IsEmailVerified = x.User.IsEmailVerified,
+                IsPhoneVerified = x.User.IsPhoneVerified,
+                CreatedAt = x.User.CreatedAt,
+                LastLoginAt = x.User.LastLoginAt,
+                FirstName = x.Profile != null ? x.Profile.FirstName : null,
+                LastName = x.Profile != null ? x.Profile.LastName : null,
+                DisplayName = x.Profile != null ? x.Profile.DisplayName : null,
+                City = x.Profile != null ? x.Profile.City : null,
+                State = x.Profile != null ? x.Profile.State : null
             })
             .ToListAsync();
 

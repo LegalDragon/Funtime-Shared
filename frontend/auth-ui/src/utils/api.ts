@@ -211,6 +211,12 @@ export interface AdminUser {
   isPhoneVerified: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  // Profile fields
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  city?: string;
+  state?: string;
 }
 
 export interface AdminUserList {

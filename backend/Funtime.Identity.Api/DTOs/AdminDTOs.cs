@@ -81,6 +81,13 @@ public class AdminUserResponse
     public bool IsPhoneVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+
+    // Profile fields
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? DisplayName { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
 }
 
 public class AdminUserListResponse
