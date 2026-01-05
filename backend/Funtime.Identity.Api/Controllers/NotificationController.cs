@@ -266,25 +266,25 @@ public class NotificationController : ControllerBase
         try
         {
             using var conn = CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@TaskCode", task.TaskCode ?? "");
+            parameters.Add("@TaskType", task.TaskType ?? "Email");
+            parameters.Add("@App_ID", task.App_ID ?? 0);
+            parameters.Add("@ProfileID", task.ProfileID ?? 0);
+            parameters.Add("@TemplateID", task.TemplateID ?? 0);
+            parameters.Add("@Status", task.Status ?? "Active");
+            parameters.Add("@TestMailTo", task.TestMailTo ?? "");
+            parameters.Add("@LangCode", task.LangCode ?? "en");
+            parameters.Add("@MailFromName", task.MailFromName ?? "");
+            parameters.Add("@MailFrom", task.MailFrom ?? "");
+            parameters.Add("@MailTo", task.MailTo ?? "");
+            parameters.Add("@MailCC", task.MailCC ?? "");
+            parameters.Add("@MailBCC", task.MailBCC ?? "");
+            parameters.Add("@AttachmentProcName", task.AttachmentProcName ?? "");
+
             var result = await conn.QuerySingleOrDefaultAsync<TaskRow>(
                 "exec dbo.csp_Tasks_AddNew @TaskCode, @TaskType, @App_ID, @ProfileID, @TemplateID, @Status, @TestMailTo, @LangCode, @MailFromName, @MailFrom, @MailTo, @MailCC, @MailBCC, @AttachmentProcName",
-                new
-                {
-                    TaskCode = task.TaskCode ?? "",
-                    TaskType = task.TaskType ?? "Email",
-                    App_ID = task.App_ID ?? 0,
-                    ProfileID = task.ProfileID ?? 0,
-                    TemplateID = task.TemplateID ?? 0,
-                    Status = task.Status ?? "Active",
-                    TestMailTo = task.TestMailTo ?? "",
-                    LangCode = task.LangCode ?? "en",
-                    MailFromName = task.MailFromName ?? "",
-                    MailFrom = task.MailFrom ?? "",
-                    MailTo = task.MailTo ?? "",
-                    MailCC = task.MailCC ?? "",
-                    MailBCC = task.MailBCC ?? "",
-                    AttachmentProcName = task.AttachmentProcName ?? ""
-                });
+                parameters);
             _logger.LogInformation("Task {Code} created", task.TaskCode);
             return result ?? task;
         }
@@ -301,26 +301,24 @@ public class NotificationController : ControllerBase
         try
         {
             using var conn = CreateConnection();
-            await conn.ExecuteAsync(
-                "exec dbo.csp_Tasks_Update @Task_ID, @TaskCode, @TaskType, @App_ID, @ProfileID, @TemplateID, @Status, @TestMailTo, @LangCode, @MailFromName, @MailFrom, @MailTo, @MailCC, @MailBCC, @AttachmentProcName",
-                new
-                {
-                    Task_ID = id,
-                    TaskCode = task.TaskCode ?? "",
-                    TaskType = task.TaskType ?? "Email",
-                    App_ID = task.App_ID ?? 0,
-                    ProfileID = task.ProfileID ?? 0,
-                    TemplateID = task.TemplateID ?? 0,
-                    Status = task.Status ?? "Active",
-                    TestMailTo = task.TestMailTo ?? "",
-                    LangCode = task.LangCode ?? "en",
-                    MailFromName = task.MailFromName ?? "",
-                    MailFrom = task.MailFrom ?? "",
-                    MailTo = task.MailTo ?? "",
-                    MailCC = task.MailCC ?? "",
-                    MailBCC = task.MailBCC ?? "",
-                    AttachmentProcName = task.AttachmentProcName ?? ""
-                });
+            var parameters = new DynamicParameters();
+            parameters.Add("@Task_ID", id);
+            parameters.Add("@TaskCode", task.TaskCode ?? "");
+            parameters.Add("@TaskType", task.TaskType ?? "Email");
+            parameters.Add("@App_ID", task.App_ID ?? 0);
+            parameters.Add("@ProfileID", task.ProfileID ?? 0);
+            parameters.Add("@TemplateID", task.TemplateID ?? 0);
+            parameters.Add("@Status", task.Status ?? "Active");
+            parameters.Add("@TestMailTo", task.TestMailTo ?? "");
+            parameters.Add("@LangCode", task.LangCode ?? "en");
+            parameters.Add("@MailFromName", task.MailFromName ?? "");
+            parameters.Add("@MailFrom", task.MailFrom ?? "");
+            parameters.Add("@MailTo", task.MailTo ?? "");
+            parameters.Add("@MailCC", task.MailCC ?? "");
+            parameters.Add("@MailBCC", task.MailBCC ?? "");
+            parameters.Add("@AttachmentProcName", task.AttachmentProcName ?? "");
+
+            await conn.ExecuteAsync("exec dbo.csp_Tasks_Update @Task_ID, @TaskCode, @TaskType, @App_ID, @ProfileID, @TemplateID, @Status, @TestMailTo, @LangCode, @MailFromName, @MailFrom, @MailTo, @MailCC, @MailBCC, @AttachmentProcName", parameters);
             _logger.LogInformation("Task {Id} updated", id);
             task.Task_ID = id;
             return task;
