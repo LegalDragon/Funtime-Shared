@@ -13,7 +13,7 @@ namespace Funtime.Identity.Api.Controllers;
 /// Endpoints for changing user email and phone with OTP verification.
 /// </summary>
 [ApiController]
-[Route("api/auth")]
+[Route("auth")]
 [Authorize]
 public class CredentialChangeController : ControllerBase
 {

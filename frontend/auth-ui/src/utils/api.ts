@@ -650,7 +650,7 @@ export interface CredentialChangeVerifyResponse {
 export const credentialChangeApi = {
   // Request email change - sends OTP to new email
   async requestEmailChange(newEmail: string): Promise<CredentialChangeRequestResponse> {
-    return request('/api/auth/change-email/request', {
+    return request('/auth/change-email/request', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ newEmail }),
@@ -659,7 +659,7 @@ export const credentialChangeApi = {
 
   // Verify email change with OTP code
   async verifyEmailChange(newEmail: string, code: string): Promise<CredentialChangeVerifyResponse> {
-    return request('/api/auth/change-email/verify', {
+    return request('/auth/change-email/verify', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ newEmail, code }),
@@ -668,7 +668,7 @@ export const credentialChangeApi = {
 
   // Request phone change - sends OTP via SMS
   async requestPhoneChange(newPhoneNumber: string): Promise<CredentialChangeRequestResponse> {
-    return request('/api/auth/change-phone/request', {
+    return request('/auth/change-phone/request', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ newPhoneNumber }),
@@ -677,7 +677,7 @@ export const credentialChangeApi = {
 
   // Verify phone change with OTP code
   async verifyPhoneChange(newPhoneNumber: string, code: string): Promise<CredentialChangeVerifyResponse> {
-    return request('/api/auth/change-phone/verify', {
+    return request('/auth/change-phone/verify', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ newPhoneNumber, code }),
