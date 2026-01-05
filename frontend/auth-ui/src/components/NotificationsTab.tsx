@@ -382,7 +382,11 @@ export function NotificationsTab() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold">Mail Profiles</h3>
               <button
-                onClick={() => setEditingProfile({ smtpPort: 587, securityMode: 'StartTlsWhenAvailable', isActive: true })}
+                onClick={() => {
+                  // Find the value for StartTlsWhenAvailable from loaded modes, or default to '2'
+                  const defaultMode = securityModes.find(m => m.text?.includes('when available'))?.value || '2';
+                  setEditingProfile({ smtpPort: 587, securityMode: defaultMode, isActive: true });
+                }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4" /> Add Profile
@@ -746,7 +750,7 @@ export function NotificationsTab() {
               <div>
                 <label className="block text-sm font-medium mb-1">Security Mode</label>
                 <select
-                  value={editingProfile.securityMode || 'StartTlsWhenAvailable'}
+                  value={editingProfile.securityMode || '2'}
                   onChange={(e) => setEditingProfile({ ...editingProfile, securityMode: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
@@ -756,10 +760,10 @@ export function NotificationsTab() {
                     ))
                   ) : (
                     <>
-                      <option key="None" value="None">None</option>
-                      <option key="SslOnConnect" value="SslOnConnect">SSL on Connect</option>
-                      <option key="StartTls" value="StartTls">StartTLS (required)</option>
-                      <option key="StartTlsWhenAvailable" value="StartTlsWhenAvailable">StartTLS (when available)</option>
+                      <option key="0" value="0">None</option>
+                      <option key="3" value="3">SSL on Connect</option>
+                      <option key="1" value="1">StartTLS (required)</option>
+                      <option key="2" value="2">StartTLS (when available)</option>
                     </>
                   )}
                 </select>
