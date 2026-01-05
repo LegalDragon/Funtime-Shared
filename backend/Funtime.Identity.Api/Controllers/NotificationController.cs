@@ -194,14 +194,19 @@ public class NotificationController : ControllerBase
         try
         {
             using var conn = CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ET_Code", template.ET_Code ?? "");
+            parameters.Add("@App_ID", template.App_ID ?? 0);
+            parameters.Add("@Lang_Code", template.Lang_Code ?? "en");
+            parameters.Add("@SendFrom", template.SendFrom ?? "");
+            parameters.Add("@SendTo", template.SendTo ?? "");
+            parameters.Add("@BCC", template.BCC ?? "");
+            parameters.Add("@Subject", template.Subject ?? "");
+            parameters.Add("@Body", template.Body ?? "");
+
             var result = await conn.QuerySingleOrDefaultAsync<EmailTemplateRow>(
-                "exec dbo.csp_Email_Templates_AddNew @ET_Code, @Subject, @Body",
-                new
-                {
-                    ET_Code = template.ET_Code ?? "",
-                    Subject = template.Subject ?? "",
-                    Body = template.Body ?? ""
-                });
+                "exec dbo.csp_Email_Templates_AddNew @ET_Code, @App_ID, @Lang_Code, @SendFrom, @SendTo, @BCC, @Subject, @Body",
+                parameters);
             _logger.LogInformation("Template {Code} created", template.ET_Code);
             return result ?? template;
         }
@@ -218,15 +223,20 @@ public class NotificationController : ControllerBase
         try
         {
             using var conn = CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ET_ID", id);
+            parameters.Add("@ET_Code", template.ET_Code ?? "");
+            parameters.Add("@App_ID", template.App_ID ?? 0);
+            parameters.Add("@Lang_Code", template.Lang_Code ?? "en");
+            parameters.Add("@SendFrom", template.SendFrom ?? "");
+            parameters.Add("@SendTo", template.SendTo ?? "");
+            parameters.Add("@BCC", template.BCC ?? "");
+            parameters.Add("@Subject", template.Subject ?? "");
+            parameters.Add("@Body", template.Body ?? "");
+
             await conn.ExecuteAsync(
-                "exec dbo.csp_Email_Templates_Update @ET_ID, @ET_Code, @Subject, @Body",
-                new
-                {
-                    ET_ID = id,
-                    ET_Code = template.ET_Code ?? "",
-                    Subject = template.Subject ?? "",
-                    Body = template.Body ?? ""
-                });
+                "exec dbo.csp_Email_Templates_Update @ET_ID, @ET_Code, @App_ID, @Lang_Code, @SendFrom, @SendTo, @BCC, @Subject, @Body",
+                parameters);
             _logger.LogInformation("Template {Id} updated", id);
             template.ET_ID = id;
             return template;

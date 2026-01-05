@@ -846,7 +846,11 @@ export interface AppRow {
 export interface EmailTemplate {
   eT_ID: number;
   eT_Code?: string;
+  app_ID?: number;
   lang_Code?: string;
+  sendFrom?: string;
+  sendTo?: string;
+  bcc?: string;
   subject?: string;
   body?: string;
   app_Code?: string;
