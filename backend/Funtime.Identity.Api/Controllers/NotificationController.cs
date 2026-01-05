@@ -250,7 +250,7 @@ public class NotificationController : ControllerBase
             using var conn = CreateConnection();
             var tasks = await conn.QueryAsync<TaskRow>(
                 "exec dbo.csp_Tasks_Get @App_ID",
-                new { App_ID = appId });
+                new { App_ID = appId ?? 0 });
             return tasks.ToList();
         }
         catch (Exception ex)
