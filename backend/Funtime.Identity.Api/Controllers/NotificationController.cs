@@ -198,9 +198,9 @@ public class NotificationController : ControllerBase
                 "exec dbo.csp_Email_Templates_AddNew @ET_Code, @Subject, @Body",
                 new
                 {
-                    template.ET_Code,
-                    template.Subject,
-                    template.Body
+                    ET_Code = template.ET_Code ?? "",
+                    Subject = template.Subject ?? "",
+                    Body = template.Body ?? ""
                 });
             _logger.LogInformation("Template {Code} created", template.ET_Code);
             return result ?? template;
@@ -223,9 +223,9 @@ public class NotificationController : ControllerBase
                 new
                 {
                     ET_ID = id,
-                    template.ET_Code,
-                    template.Subject,
-                    template.Body
+                    ET_Code = template.ET_Code ?? "",
+                    Subject = template.Subject ?? "",
+                    Body = template.Body ?? ""
                 });
             _logger.LogInformation("Template {Id} updated", id);
             template.ET_ID = id;
