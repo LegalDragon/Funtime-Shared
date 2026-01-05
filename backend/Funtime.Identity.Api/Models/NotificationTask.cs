@@ -28,6 +28,9 @@ public class TaskRow
     [JsonPropertyName("status")]
     public string? Status { get; set; } = "Active";
 
+    [JsonPropertyName("mailPriority")]
+    public string? MailPriority { get; set; } = "N";
+
     [JsonPropertyName("testMailTo")]
     public string? TestMailTo { get; set; }
 

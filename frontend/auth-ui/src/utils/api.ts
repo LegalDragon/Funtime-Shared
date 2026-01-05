@@ -860,6 +860,7 @@ export interface TaskRow {
   profileID?: number;
   templateID?: number;
   status?: string;
+  mailPriority?: string;
   testMailTo?: string;
   langCode?: string;
   mailFromName?: string;
