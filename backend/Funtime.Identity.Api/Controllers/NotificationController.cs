@@ -270,20 +270,20 @@ public class NotificationController : ControllerBase
                 "exec dbo.csp_Tasks_AddNew @TaskCode, @TaskType, @App_ID, @ProfileID, @TemplateID, @Status, @TestMailTo, @LangCode, @MailFromName, @MailFrom, @MailTo, @MailCC, @MailBCC, @AttachmentProcName",
                 new
                 {
-                    task.TaskCode,
-                    task.TaskType,
-                    task.App_ID,
-                    task.ProfileID,
-                    task.TemplateID,
-                    task.Status,
-                    task.TestMailTo,
-                    task.LangCode,
-                    task.MailFromName,
-                    task.MailFrom,
-                    task.MailTo,
-                    task.MailCC,
-                    task.MailBCC,
-                    task.AttachmentProcName
+                    TaskCode = task.TaskCode ?? "",
+                    TaskType = task.TaskType ?? "Email",
+                    App_ID = task.App_ID ?? 0,
+                    ProfileID = task.ProfileID ?? 0,
+                    TemplateID = task.TemplateID ?? 0,
+                    Status = task.Status ?? "Active",
+                    TestMailTo = task.TestMailTo ?? "",
+                    LangCode = task.LangCode ?? "en",
+                    MailFromName = task.MailFromName ?? "",
+                    MailFrom = task.MailFrom ?? "",
+                    MailTo = task.MailTo ?? "",
+                    MailCC = task.MailCC ?? "",
+                    MailBCC = task.MailBCC ?? "",
+                    AttachmentProcName = task.AttachmentProcName ?? ""
                 });
             _logger.LogInformation("Task {Code} created", task.TaskCode);
             return result ?? task;
@@ -291,7 +291,7 @@ public class NotificationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create task");
-            return StatusCode(500, new { message = "Failed to create task" });
+            return StatusCode(500, new { message = $"Failed to create task: {ex.Message}" });
         }
     }
 
@@ -306,20 +306,20 @@ public class NotificationController : ControllerBase
                 new
                 {
                     Task_ID = id,
-                    task.TaskCode,
-                    task.TaskType,
-                    task.App_ID,
-                    task.ProfileID,
-                    task.TemplateID,
-                    task.Status,
-                    task.TestMailTo,
-                    task.LangCode,
-                    task.MailFromName,
-                    task.MailFrom,
-                    task.MailTo,
-                    task.MailCC,
-                    task.MailBCC,
-                    task.AttachmentProcName
+                    TaskCode = task.TaskCode ?? "",
+                    TaskType = task.TaskType ?? "Email",
+                    App_ID = task.App_ID ?? 0,
+                    ProfileID = task.ProfileID ?? 0,
+                    TemplateID = task.TemplateID ?? 0,
+                    Status = task.Status ?? "Active",
+                    TestMailTo = task.TestMailTo ?? "",
+                    LangCode = task.LangCode ?? "en",
+                    MailFromName = task.MailFromName ?? "",
+                    MailFrom = task.MailFrom ?? "",
+                    MailTo = task.MailTo ?? "",
+                    MailCC = task.MailCC ?? "",
+                    MailBCC = task.MailBCC ?? "",
+                    AttachmentProcName = task.AttachmentProcName ?? ""
                 });
             _logger.LogInformation("Task {Id} updated", id);
             task.Task_ID = id;
@@ -328,7 +328,7 @@ public class NotificationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update task {Id}", id);
-            return StatusCode(500, new { message = "Failed to update task" });
+            return StatusCode(500, new { message = $"Failed to update task: {ex.Message}" });
         }
     }
 
