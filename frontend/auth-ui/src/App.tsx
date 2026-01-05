@@ -8,6 +8,8 @@ import { TermsOfServicePage } from './pages/TermsOfService';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicy';
 import { OAuthCallbackPage } from './pages/OAuthCallback';
 import { VerifyPage } from './pages/VerifyPage';
+import { ChangeCredentialPage } from './pages/ChangeCredential';
+
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
         <Route path="/verify" element={<VerifyPage />} />
         {/* Default redirect to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/change-credential" element={<ChangeCredentialPage />} />
+
       </Routes>
     </BrowserRouter>
   );
