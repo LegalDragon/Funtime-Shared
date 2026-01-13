@@ -355,7 +355,7 @@ public class NotificationController : ControllerBase
         {
             using var conn = CreateConnection();
             var items = await conn.QueryAsync<OutboxRow>("exec dbo.csp_Outbox_Get");
-            var list = items.ToList();
+            var list = items.OrderByDescending(x => x.Id).ToList();
 
             var pagedItems = list
                 .Skip((page - 1) * pageSize)
@@ -414,6 +414,23 @@ public class NotificationController : ControllerBase
         }
     }
 
+    [HttpPost("outbox/{id}/retry")]
+    public async Task<ActionResult> RetryOutbox(int id)
+    {
+        try
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync("exec dbo.csp_History_Retry @Id", new { Id = id });
+            _logger.LogInformation("Outbox item {Id} queued for retry", id);
+            return Ok(new { message = "Queued for retry" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retry outbox item {Id}", id);
+            return StatusCode(500, new { message = "Failed to retry" });
+        }
+    }
+
     #endregion
 
     #region History
@@ -427,7 +444,7 @@ public class NotificationController : ControllerBase
         {
             using var conn = CreateConnection();
             var items = await conn.QueryAsync<HistoryRow>("exec dbo.csp_History_Get");
-            var list = items.ToList();
+            var list = items.OrderByDescending(x => x.ID).ToList();
 
             var pagedItems = list
                 .Skip((page - 1) * pageSize)

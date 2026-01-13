@@ -262,6 +262,16 @@ export function NotificationsTab() {
     }
   };
 
+  const handleRetryOutbox = async (id: number) => {
+    try {
+      await notificationApi.retryOutbox(id);
+      loadOutbox(outboxPage);
+      loadStats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to retry');
+    }
+  };
+
   const handleDeleteOutbox = async (id: number) => {
     if (!confirm('Delete this message?')) return;
     try {
@@ -568,6 +578,9 @@ export function NotificationsTab() {
                     }`}>
                       {item.status}
                     </span>
+                    <button onClick={() => handleRetryOutbox(item.id)} className="p-1 hover:bg-gray-100 rounded" title="Retry">
+                      <RefreshCw className="w-4 h-4 text-blue-500" />
+                    </button>
                     <button onClick={() => handleDeleteOutbox(item.id)} className="p-1 hover:bg-gray-100 rounded" title="Delete">
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </button>
@@ -631,11 +644,9 @@ export function NotificationsTab() {
                     }`}>
                       {item.status}
                     </span>
-                    {item.status === 'Failed' && (
-                      <button onClick={() => handleRetryHistory(item.iD)} className="p-1 hover:bg-gray-100 rounded" title="Retry">
-                        <RefreshCw className="w-4 h-4 text-blue-500" />
-                      </button>
-                    )}
+                    <button onClick={() => handleRetryHistory(item.iD)} className="p-1 hover:bg-gray-100 rounded" title="Retry">
+                      <RefreshCw className="w-4 h-4 text-blue-500" />
+                    </button>
                   </div>
                 </div>
               ))}

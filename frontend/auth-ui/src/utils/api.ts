@@ -1054,6 +1054,13 @@ export const notificationApi = {
     });
   },
 
+  async retryOutbox(id: number): Promise<void> {
+    return request(`/admin/notifications/outbox/${id}/retry`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+
   // History
   async getHistory(options?: { page?: number; pageSize?: number }): Promise<HistoryListResponse> {
     const params = new URLSearchParams();
