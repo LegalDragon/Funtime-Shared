@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succes",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "or": "ou"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signOut": "Se deconnecter",
+    "signUp": "S'inscrire",
+    "email": "Email",
+    "phone": "Telephone",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "emailAddress": "Adresse email",
+    "phoneNumber": "Numero de telephone",
+    "emailPlaceholder": "vous@exemple.com",
+    "phonePlaceholder": "+33 6 12 34 56 78",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "forgotPassword": "Mot de passe oublie?",
+    "rememberMe": "Se souvenir de moi",
+    "signingIn": "Connexion...",
+    "signInButton": "Se Connecter",
+    "continueWith": "Continuer avec {{provider}}",
+    "orContinueWith": "ou continuer avec",
+    "continueTo": "pour continuer vers {{destination}}",
+    "noAccount": "Pas de compte?",
+    "createOne": "En creer un",
+    "haveAccount": "Deja un compte?",
+    "loginFailed": "Echec de la connexion",
+    "invalidCredentials": "Email ou mot de passe invalide"
+  },
+  "phoneAuth": {
+    "useSmsCode": "Utiliser un code SMS",
+    "usePassword": "Utiliser le mot de passe",
+    "sendSmsCode": "Envoyer le Code SMS",
+    "sending": "Envoi...",
+    "verificationCode": "Code de Verification",
+    "changeNumber": "Changer le numero",
+    "resendCode": "Renvoyer le code",
+    "verifying": "Verification...",
+    "verifyAndSignIn": "Verifier et Connecter",
+    "failedToSendCode": "Echec de l'envoi du code",
+    "invalidCode": "Code invalide",
+    "verificationFailed": "Echec de la verification"
+  },
+  "register": {
+    "title": "Creer un Compte",
+    "subtitle": "Rejoignez {{siteName}}",
+    "firstName": "Prenom",
+    "lastName": "Nom",
+    "displayName": "Nom d'affichage",
+    "createAccount": "Creer un Compte",
+    "creating": "Creation du compte...",
+    "registrationFailed": "Echec de l'inscription",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "agreeToTerms": "J'accepte les",
+    "termsOfService": "Conditions d'utilisation",
+    "and": "et",
+    "privacyPolicy": "Politique de confidentialite"
+  },
+  "forgotPassword": {
+    "title": "Reinitialiser le Mot de Passe",
+    "subtitle": "Entrez votre email pour recevoir un lien",
+    "sendResetLink": "Envoyer le Lien",
+    "sending": "Envoi...",
+    "checkEmail": "Verifiez votre email",
+    "resetLinkSent": "Nous avons envoye un lien a {{email}}",
+    "backToLogin": "Retour a la Connexion",
+    "resetFailed": "Echec de l'envoi du lien"
+  },
+  "resetPassword": {
+    "title": "Nouveau Mot de Passe",
+    "newPassword": "Nouveau Mot de Passe",
+    "confirmNewPassword": "Confirmer le Nouveau Mot de Passe",
+    "resetPassword": "Reinitialiser",
+    "resetting": "Reinitialisation...",
+    "resetSuccess": "Mot de passe reinitialise",
+    "resetFailed": "Echec de la reinitialisation"
+  },
+  "verify": {
+    "title": "Verifier votre Compte",
+    "verifying": "Verification de votre compte...",
+    "success": "Votre compte a ete verifie!",
+    "failed": "Echec de la verification",
+    "redirecting": "Redirection vers la connexion..."
+  },
+  "sites": {
+    "title": "Selectionner un Site",
+    "subtitle": "Choisissez ou vous voulez aller",
+    "noSites": "Aucun site disponible",
+    "visitSite": "Visiter le Site"
+  },
+  "admin": {
+    "dashboard": "Tableau de Bord Admin",
+    "users": "Utilisateurs",
+    "sites": "Sites",
+    "settings": "Parametres",
+    "notifications": "Notifications",
+    "logs": "Journaux"
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "invalidEmail": "Adresse email invalide",
+    "invalidPhone": "Numero de telephone invalide",
+    "passwordTooShort": "Le mot de passe doit avoir au moins {{min}} caracteres",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas"
+  },
+  "errors": {
+    "networkError": "Erreur reseau. Veuillez reessayer.",
+    "serverError": "Erreur serveur. Veuillez reessayer plus tard.",
+    "unauthorized": "Vous n'etes pas autorise a effectuer cette action",
+    "notFound": "Non trouve",
+    "somethingWentWrong": "Une erreur s'est produite"
+  }
+}

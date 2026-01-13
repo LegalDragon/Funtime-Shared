@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "submit": "提交",
+    "or": "或"
+  },
+  "auth": {
+    "signIn": "登录",
+    "signOut": "退出登录",
+    "signUp": "注册",
+    "email": "邮箱",
+    "phone": "手机",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "emailAddress": "电子邮箱",
+    "phoneNumber": "手机号码",
+    "emailPlaceholder": "you@example.com",
+    "phonePlaceholder": "+86 138 0000 0000",
+    "passwordPlaceholder": "请输入密码",
+    "forgotPassword": "忘记密码?",
+    "rememberMe": "记住我",
+    "signingIn": "登录中...",
+    "signInButton": "登录",
+    "continueWith": "使用 {{provider}} 继续",
+    "orContinueWith": "或使用以下方式继续",
+    "continueTo": "继续前往 {{destination}}",
+    "noAccount": "还没有账户?",
+    "createOne": "创建账户",
+    "haveAccount": "已有账户?",
+    "loginFailed": "登录失败",
+    "invalidCredentials": "邮箱或密码错误"
+  },
+  "phoneAuth": {
+    "useSmsCode": "使用短信验证码",
+    "usePassword": "使用密码登录",
+    "sendSmsCode": "发送验证码",
+    "sending": "发送中...",
+    "verificationCode": "验证码",
+    "changeNumber": "更换号码",
+    "resendCode": "重新发送",
+    "verifying": "验证中...",
+    "verifyAndSignIn": "验证并登录",
+    "failedToSendCode": "发送验证码失败",
+    "invalidCode": "验证码错误",
+    "verificationFailed": "验证失败"
+  },
+  "register": {
+    "title": "创建账户",
+    "subtitle": "加入 {{siteName}}",
+    "firstName": "名",
+    "lastName": "姓",
+    "displayName": "显示名称",
+    "createAccount": "创建账户",
+    "creating": "创建中...",
+    "registrationFailed": "注册失败",
+    "passwordsDoNotMatch": "两次密码不一致",
+    "agreeToTerms": "我同意",
+    "termsOfService": "服务条款",
+    "and": "和",
+    "privacyPolicy": "隐私政策"
+  },
+  "forgotPassword": {
+    "title": "重置密码",
+    "subtitle": "输入您的邮箱以接收重置链接",
+    "sendResetLink": "发送重置链接",
+    "sending": "发送中...",
+    "checkEmail": "请查收邮件",
+    "resetLinkSent": "重置链接已发送至 {{email}}",
+    "backToLogin": "返回登录",
+    "resetFailed": "发送重置链接失败"
+  },
+  "resetPassword": {
+    "title": "设置新密码",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码",
+    "resetPassword": "重置密码",
+    "resetting": "重置中...",
+    "resetSuccess": "密码重置成功",
+    "resetFailed": "密码重置失败"
+  },
+  "verify": {
+    "title": "验证您的账户",
+    "verifying": "正在验证您的账户...",
+    "success": "您的账户已验证!",
+    "failed": "验证失败",
+    "redirecting": "正在跳转到登录页..."
+  },
+  "sites": {
+    "title": "选择站点",
+    "subtitle": "选择您要访问的站点",
+    "noSites": "暂无可用站点",
+    "visitSite": "访问站点"
+  },
+  "admin": {
+    "dashboard": "管理后台",
+    "users": "用户管理",
+    "sites": "站点管理",
+    "settings": "系统设置",
+    "notifications": "通知管理",
+    "logs": "日志"
+  },
+  "validation": {
+    "required": "此字段为必填项",
+    "invalidEmail": "邮箱地址格式错误",
+    "invalidPhone": "手机号码格式错误",
+    "passwordTooShort": "密码长度至少为 {{min}} 个字符",
+    "passwordsDoNotMatch": "两次密码不一致"
+  },
+  "errors": {
+    "networkError": "网络错误,请重试",
+    "serverError": "服务器错误,请稍后重试",
+    "unauthorized": "您没有权限执行此操作",
+    "notFound": "未找到",
+    "somethingWentWrong": "出现错误"
+  }
+}

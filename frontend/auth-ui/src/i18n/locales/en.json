@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "or": "or"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signUp": "Sign up",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "emailAddress": "Email address",
+    "phoneNumber": "Phone Number",
+    "emailPlaceholder": "you@example.com",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "signingIn": "Signing in...",
+    "signInButton": "Sign In",
+    "continueWith": "Continue with {{provider}}",
+    "orContinueWith": "or continue with",
+    "continueTo": "to continue to {{destination}}",
+    "noAccount": "Don't have an account?",
+    "createOne": "Create one",
+    "haveAccount": "Already have an account?",
+    "loginFailed": "Login failed",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "phoneAuth": {
+    "useSmsCode": "Use SMS code instead",
+    "usePassword": "Use password instead",
+    "sendSmsCode": "Send SMS Code",
+    "sending": "Sending...",
+    "verificationCode": "Verification Code",
+    "changeNumber": "Change number",
+    "resendCode": "Resend code",
+    "verifying": "Verifying...",
+    "verifyAndSignIn": "Verify & Sign In",
+    "failedToSendCode": "Failed to send code",
+    "invalidCode": "Invalid code",
+    "verificationFailed": "Verification failed"
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Join {{siteName}}",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "displayName": "Display Name",
+    "createAccount": "Create Account",
+    "creating": "Creating account...",
+    "registrationFailed": "Registration failed",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "agreeToTerms": "I agree to the",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "forgotPassword": {
+    "title": "Reset Password",
+    "subtitle": "Enter your email to receive a reset link",
+    "sendResetLink": "Send Reset Link",
+    "sending": "Sending...",
+    "checkEmail": "Check your email",
+    "resetLinkSent": "We've sent a password reset link to {{email}}",
+    "backToLogin": "Back to Login",
+    "resetFailed": "Failed to send reset link"
+  },
+  "resetPassword": {
+    "title": "Set New Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "resetPassword": "Reset Password",
+    "resetting": "Resetting...",
+    "resetSuccess": "Password reset successfully",
+    "resetFailed": "Failed to reset password"
+  },
+  "verify": {
+    "title": "Verify Your Account",
+    "verifying": "Verifying your account...",
+    "success": "Your account has been verified!",
+    "failed": "Verification failed",
+    "redirecting": "Redirecting to login..."
+  },
+  "sites": {
+    "title": "Select a Site",
+    "subtitle": "Choose where you want to go",
+    "noSites": "No sites available",
+    "visitSite": "Visit Site"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Users",
+    "sites": "Sites",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "logs": "Logs"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "passwordTooShort": "Password must be at least {{min}} characters",
+    "passwordsDoNotMatch": "Passwords do not match"
+  },
+  "errors": {
+    "networkError": "Network error. Please try again.",
+    "serverError": "Server error. Please try again later.",
+    "unauthorized": "You are not authorized to perform this action",
+    "notFound": "Not found",
+    "somethingWentWrong": "Something went wrong"
+  }
+}

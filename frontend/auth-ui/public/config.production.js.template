@@ -1,0 +1,11 @@
+// Production runtime configuration template
+// For same-origin deployment (frontend and API on same domain), use "/api"
+// For cross-origin, use full URL like "https://shared.funtimepb.com/api"
+window.__FUNTIME_CONFIG__ = {
+  // API URL - "/api" works when frontend is served from same origin as API
+  API_URL: "/api",
+
+  // Production Stripe publishable key (get from Stripe Dashboard > Live mode)
+  // Replace with your live key for production
+  STRIPE_PUBLISHABLE_KEY: "pk_live_REPLACE_WITH_YOUR_LIVE_KEY"
+};

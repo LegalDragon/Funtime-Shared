@@ -12,6 +12,10 @@ desktop.ini
 *~
 .vs/
 
+*.csproj.user
+properties/
+.config/
+
 # Logs
 *.log
 logs/
@@ -41,3 +45,21 @@ bin/
 #uploads
 uploads/
 upload/
+
+
+#visual studio code
+*.vscode/
+bin/
+obj/
+*.dll
+*.exe
+
+# .NET build artifacts
+**/obj/**
+**/bin/**
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.GeneratedMSBuildEditorConfig.editorconfig
+*.GlobalUsings.g.cs
+*.assets.cache
+/backend/Funtime.Identity.Api/appsettings.json

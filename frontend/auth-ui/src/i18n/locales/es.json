@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Exitoso",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "or": "o"
+  },
+  "auth": {
+    "signIn": "Iniciar sesion",
+    "signOut": "Cerrar sesion",
+    "signUp": "Registrarse",
+    "email": "Correo",
+    "phone": "Telefono",
+    "password": "Contrasena",
+    "confirmPassword": "Confirmar Contrasena",
+    "emailAddress": "Correo electronico",
+    "phoneNumber": "Numero de telefono",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "passwordPlaceholder": "Ingresa tu contrasena",
+    "forgotPassword": "Olvidaste tu contrasena?",
+    "rememberMe": "Recordarme",
+    "signingIn": "Iniciando sesion...",
+    "signInButton": "Iniciar Sesion",
+    "continueWith": "Continuar con {{provider}}",
+    "orContinueWith": "o continuar con",
+    "continueTo": "para continuar a {{destination}}",
+    "noAccount": "No tienes una cuenta?",
+    "createOne": "Crear una",
+    "haveAccount": "Ya tienes una cuenta?",
+    "loginFailed": "Error al iniciar sesion",
+    "invalidCredentials": "Correo o contrasena invalidos"
+  },
+  "phoneAuth": {
+    "useSmsCode": "Usar codigo SMS",
+    "usePassword": "Usar contrasena",
+    "sendSmsCode": "Enviar Codigo SMS",
+    "sending": "Enviando...",
+    "verificationCode": "Codigo de Verificacion",
+    "changeNumber": "Cambiar numero",
+    "resendCode": "Reenviar codigo",
+    "verifying": "Verificando...",
+    "verifyAndSignIn": "Verificar e Iniciar",
+    "failedToSendCode": "Error al enviar codigo",
+    "invalidCode": "Codigo invalido",
+    "verificationFailed": "Verificacion fallida"
+  },
+  "register": {
+    "title": "Crear Cuenta",
+    "subtitle": "Unete a {{siteName}}",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "displayName": "Nombre para mostrar",
+    "createAccount": "Crear Cuenta",
+    "creating": "Creando cuenta...",
+    "registrationFailed": "Error en el registro",
+    "passwordsDoNotMatch": "Las contrasenas no coinciden",
+    "agreeToTerms": "Acepto los",
+    "termsOfService": "Terminos de Servicio",
+    "and": "y",
+    "privacyPolicy": "Politica de Privacidad"
+  },
+  "forgotPassword": {
+    "title": "Restablecer Contrasena",
+    "subtitle": "Ingresa tu correo para recibir un enlace",
+    "sendResetLink": "Enviar Enlace",
+    "sending": "Enviando...",
+    "checkEmail": "Revisa tu correo",
+    "resetLinkSent": "Hemos enviado un enlace a {{email}}",
+    "backToLogin": "Volver al Inicio",
+    "resetFailed": "Error al enviar el enlace"
+  },
+  "resetPassword": {
+    "title": "Nueva Contrasena",
+    "newPassword": "Nueva Contrasena",
+    "confirmNewPassword": "Confirmar Nueva Contrasena",
+    "resetPassword": "Restablecer Contrasena",
+    "resetting": "Restableciendo...",
+    "resetSuccess": "Contrasena restablecida",
+    "resetFailed": "Error al restablecer"
+  },
+  "verify": {
+    "title": "Verificar tu Cuenta",
+    "verifying": "Verificando tu cuenta...",
+    "success": "Tu cuenta ha sido verificada!",
+    "failed": "Verificacion fallida",
+    "redirecting": "Redirigiendo al inicio..."
+  },
+  "sites": {
+    "title": "Seleccionar un Sitio",
+    "subtitle": "Elige a donde quieres ir",
+    "noSites": "No hay sitios disponibles",
+    "visitSite": "Visitar Sitio"
+  },
+  "admin": {
+    "dashboard": "Panel de Admin",
+    "users": "Usuarios",
+    "sites": "Sitios",
+    "settings": "Configuracion",
+    "notifications": "Notificaciones",
+    "logs": "Registros"
+  },
+  "validation": {
+    "required": "Este campo es requerido",
+    "invalidEmail": "Correo electronico invalido",
+    "invalidPhone": "Numero de telefono invalido",
+    "passwordTooShort": "La contrasena debe tener al menos {{min}} caracteres",
+    "passwordsDoNotMatch": "Las contrasenas no coinciden"
+  },
+  "errors": {
+    "networkError": "Error de red. Intenta de nuevo.",
+    "serverError": "Error del servidor. Intenta mas tarde.",
+    "unauthorized": "No estas autorizado para esta accion",
+    "notFound": "No encontrado",
+    "somethingWentWrong": "Algo salio mal"
+  }
+}
