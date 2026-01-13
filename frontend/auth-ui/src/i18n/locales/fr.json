@@ -62,10 +62,14 @@
     "creating": "Creation du compte...",
     "registrationFailed": "Echec de l'inscription",
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
-    "agreeToTerms": "J'accepte les",
+    "agreeToTerms": "En creant un compte, vous acceptez nos",
     "termsOfService": "Conditions d'utilisation",
     "and": "et",
-    "privacyPolicy": "Politique de confidentialite"
+    "privacyPolicy": "Politique de confidentialite",
+    "createPassword": "Creer un mot de passe",
+    "confirmPasswordPlaceholder": "Confirmer votre mot de passe",
+    "passwordRequirement": "Doit contenir au moins 8 caracteres",
+    "sendCode": "Envoyer le Code"
   },
   "forgotPassword": {
     "title": "Reinitialiser le Mot de Passe",

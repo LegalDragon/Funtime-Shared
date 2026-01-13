@@ -62,10 +62,14 @@
     "creating": "创建中...",
     "registrationFailed": "注册失败",
     "passwordsDoNotMatch": "两次密码不一致",
-    "agreeToTerms": "我同意",
+    "agreeToTerms": "创建账户即表示您同意我们的",
     "termsOfService": "服务条款",
     "and": "和",
-    "privacyPolicy": "隐私政策"
+    "privacyPolicy": "隐私政策",
+    "createPassword": "创建密码",
+    "confirmPasswordPlaceholder": "确认您的密码",
+    "passwordRequirement": "密码长度至少为8个字符",
+    "sendCode": "发送验证码"
   },
   "forgotPassword": {
     "title": "重置密码",

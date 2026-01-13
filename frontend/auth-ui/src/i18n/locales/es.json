@@ -62,10 +62,14 @@
     "creating": "Creando cuenta...",
     "registrationFailed": "Error en el registro",
     "passwordsDoNotMatch": "Las contrasenas no coinciden",
-    "agreeToTerms": "Acepto los",
+    "agreeToTerms": "Al crear una cuenta, aceptas nuestros",
     "termsOfService": "Terminos de Servicio",
     "and": "y",
-    "privacyPolicy": "Politica de Privacidad"
+    "privacyPolicy": "Politica de Privacidad",
+    "createPassword": "Crear una contrasena",
+    "confirmPasswordPlaceholder": "Confirmar tu contrasena",
+    "passwordRequirement": "Debe tener al menos 8 caracteres",
+    "sendCode": "Enviar Codigo"
   },
   "forgotPassword": {
     "title": "Restablecer Contrasena",
