@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Funtime.Identity.Api.Models;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Funtime.Identity.Api.Models;
 /// </summary>
 public class HistoryRow
 {
+    [JsonPropertyName("iD")]
     public int ID { get; set; }
     public int? TaskId { get; set; }
     public string? TaskCode { get; set; }
