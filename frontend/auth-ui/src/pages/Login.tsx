@@ -42,7 +42,7 @@ const MicrosoftIcon = () => (
 );
 
 export function LoginPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>('email');
@@ -120,8 +120,9 @@ export function LoginPage() {
   };
 
   const handleOAuthLogin = (provider: string) => {
-    // Redirect to OAuth start URL
-    const url = authApi.getOAuthStartUrl(provider, redirectUrl || undefined, siteKey || undefined);
+    // Redirect to OAuth start URL with current language
+    const currentLang = i18n.language;
+    const url = authApi.getOAuthStartUrl(provider, redirectUrl || undefined, siteKey || undefined, currentLang);
     window.location.href = url;
   };
 

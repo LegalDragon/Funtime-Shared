@@ -170,10 +170,11 @@ export const authApi = {
   },
 
   // Get OAuth start URL (for redirect)
-  getOAuthStartUrl(provider: string, returnUrl?: string, siteKey?: string): string {
+  getOAuthStartUrl(provider: string, returnUrl?: string, siteKey?: string, langCode?: string): string {
     const params = new URLSearchParams();
     if (returnUrl) params.set('returnUrl', returnUrl);
     if (siteKey) params.set('site', siteKey);
+    if (langCode) params.set('Langcode', langCode);
     const queryString = params.toString();
     return `${API_BASE_URL}/auth/oauth/${provider}/start${queryString ? '?' + queryString : ''}`;
   },
