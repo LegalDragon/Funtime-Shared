@@ -105,9 +105,7 @@ export function AdminDashboardPage() {
 
       // Find user's role for this site and pass it along
       if (siteKey) {
-        console.log('Looking for site role', { siteKey, currentUserSites });
         const userSite = currentUserSites.find(s => s.siteKey.toLowerCase() === siteKey.toLowerCase());
-        console.log('Found userSite:', userSite);
         if (userSite?.role) {
           url.searchParams.set('siteRole', userSite.role);
           // Check if user is admin or moderator for this site
@@ -116,7 +114,6 @@ export function AdminDashboardPage() {
         }
       }
 
-      console.log('Redirecting to:', url.toString());
       window.location.href = url.toString();
     } else {
       window.location.href = siteUrl;
@@ -127,14 +124,9 @@ export function AdminDashboardPage() {
   const loadCurrentUserSites = async () => {
     try {
       const user = getCurrentUser();
-      console.log('Current user from token:', user);
       if (user?.id && !isNaN(user.id) && user.id > 0) {
         const userDetail = await adminApi.getUser(user.id);
-        console.log('User detail from API:', userDetail);
-        console.log('User sites:', userDetail.sites);
         setCurrentUserSites(userDetail.sites || []);
-      } else {
-        console.warn('Invalid user ID from token:', user?.id);
       }
     } catch (err) {
       console.error('Failed to load current user sites:', err);
