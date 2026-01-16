@@ -103,6 +103,12 @@ export function AdminDashboardPage() {
       const url = new URL(`${siteUrl}/auth/callback`);
       url.searchParams.set('token', token);
 
+      // Pass system role (e.g., SU)
+      const currentUser = getCurrentUser();
+      if (currentUser?.role) {
+        url.searchParams.set('systemRole', currentUser.role);
+      }
+
       // Find user's role for this site and pass it along
       if (siteKey) {
         const userSite = currentUserSites.find(s => s.siteKey.toLowerCase() === siteKey.toLowerCase());
