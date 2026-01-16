@@ -113,9 +113,18 @@ public class AssetController : ControllerBase
         // Get allowed file types from database
         var fileTypes = await GetEnabledFileTypesAsync();
         var contentType = file.ContentType.ToLower();
+        var fileExtension = Path.GetExtension(file.FileName)?.ToLower() ?? "";
 
-        // Find matching file type
+        // Find matching file type by MIME type first
         var matchingFileType = fileTypes.FirstOrDefault(ft => ft.MimeType.ToLower() == contentType);
+
+        // If no MIME type match, try matching by file extension (browsers often send wrong MIME types)
+        if (matchingFileType == null && !string.IsNullOrEmpty(fileExtension))
+        {
+            matchingFileType = fileTypes.FirstOrDefault(ft =>
+                ft.Extensions.ToLower().Split(',').Select(e => e.Trim()).Contains(fileExtension));
+        }
+
         if (matchingFileType == null)
         {
             // Build friendly error message with allowed types grouped by category
