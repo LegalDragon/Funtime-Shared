@@ -150,6 +150,62 @@ Your API key may be granted one or more of the following scopes:
 | GET | `/api/push/user/{userId}/status` | Check if user is connected |
 | POST | `/api/push/users/batch` | Send to multiple users |
 
+**Push Notification Response Format:**
+
+Push endpoints return detailed delivery status to help you track notification delivery:
+
+**Single User (`POST /api/push/user/{userId}`):**
+```json
+{
+  "success": true,
+  "userOnline": true,
+  "delivered": true,
+  "error": null
+}
+```
+
+**Site Notification (`POST /api/push/site/{siteKey}`):**
+```json
+{
+  "success": true,
+  "delivered": true,
+  "connectedUsers": 15,
+  "error": null
+}
+```
+
+**Broadcast (`POST /api/push/broadcast`):**
+```json
+{
+  "success": true,
+  "delivered": true,
+  "error": null
+}
+```
+
+**Batch (`POST /api/push/users/batch`):**
+```json
+{
+  "success": true,
+  "totalUsers": 10,
+  "onlineUsers": 7,
+  "deliveredCount": 7,
+  "results": [
+    { "userId": 1, "userOnline": true, "delivered": true },
+    { "userId": 2, "userOnline": false, "delivered": false }
+  ]
+}
+```
+
+**Response Fields:**
+- `success`: Whether the operation completed without errors
+- `userOnline`: Whether the user was connected via SignalR at the time
+- `delivered`: Whether SignalR successfully delivered the notification
+- `connectedUsers`: Number of users connected to the site (for site notifications)
+- `error`: Error message if success is false
+
+**Note:** The shared notification service handles real-time delivery only. Each site should persist notification history in its own database for user notification pages.
+
 ## Error Responses
 
 ### 401 Unauthorized

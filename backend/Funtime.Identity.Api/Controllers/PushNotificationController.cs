@@ -32,18 +32,20 @@ public class PushNotificationController : ControllerBase
     /// </summary>
     [HttpPost("user/{userId}")]
     [ApiKeyAuthorize(ApiScopes.PushSend, AllowJwt = true)]
-    public async Task<ActionResult> SendToUser(int userId, [FromBody] PushNotificationRequest request)
+    public async Task<ActionResult<PushResponse>> SendToUser(int userId, [FromBody] PushNotificationRequest request)
     {
-        await _notificationService.SendToUserAsync(userId, request.Type, request.Payload);
+        var result = await _notificationService.SendToUserAsync(userId, request.Type, request.Payload);
 
         _logger.LogInformation(
-            "Push notification sent to user {UserId}, type: {Type}",
-            userId, request.Type);
+            "Push notification sent to user {UserId}, type: {Type}, online: {Online}, delivered: {Delivered}",
+            userId, request.Type, result.UserOnline, result.Delivered);
 
-        return Ok(new {
-            success = true,
-            message = "Notification sent",
-            isUserConnected = _notificationService.IsUserConnected(userId)
+        return Ok(new PushResponse
+        {
+            Success = result.Success,
+            UserOnline = result.UserOnline,
+            Delivered = result.Delivered,
+            Error = result.Error
         });
     }
 
@@ -52,15 +54,21 @@ public class PushNotificationController : ControllerBase
     /// </summary>
     [HttpPost("site/{siteKey}")]
     [ApiKeyAuthorize(ApiScopes.PushSend, AllowJwt = true)]
-    public async Task<ActionResult> SendToSite(string siteKey, [FromBody] PushNotificationRequest request)
+    public async Task<ActionResult<SitePushResponse>> SendToSite(string siteKey, [FromBody] PushNotificationRequest request)
     {
-        await _notificationService.SendToSiteAsync(siteKey, request.Type, request.Payload);
+        var result = await _notificationService.SendToSiteAsync(siteKey, request.Type, request.Payload);
 
         _logger.LogInformation(
-            "Push notification sent to site {SiteKey}, type: {Type}",
-            siteKey, request.Type);
+            "Push notification sent to site {SiteKey}, type: {Type}, connected: {Connected}, delivered: {Delivered}",
+            siteKey, request.Type, result.ConnectedUsers, result.Delivered);
 
-        return Ok(new { success = true, message = "Notification sent to site" });
+        return Ok(new SitePushResponse
+        {
+            Success = result.Success,
+            Delivered = result.Delivered,
+            ConnectedUsers = result.ConnectedUsers,
+            Error = result.Error
+        });
     }
 
     /// <summary>
@@ -68,15 +76,20 @@ public class PushNotificationController : ControllerBase
     /// </summary>
     [HttpPost("broadcast")]
     [ApiKeyAuthorize(ApiScopes.PushSend, AllowJwt = true)]
-    public async Task<ActionResult> Broadcast([FromBody] PushNotificationRequest request)
+    public async Task<ActionResult<BroadcastPushResponse>> Broadcast([FromBody] PushNotificationRequest request)
     {
-        await _notificationService.SendToAllAsync(request.Type, request.Payload);
+        var result = await _notificationService.SendToAllAsync(request.Type, request.Payload);
 
         _logger.LogInformation(
-            "Broadcast notification sent, type: {Type}",
-            request.Type);
+            "Broadcast notification sent, type: {Type}, delivered: {Delivered}",
+            request.Type, result.Delivered);
 
-        return Ok(new { success = true, message = "Broadcast sent" });
+        return Ok(new BroadcastPushResponse
+        {
+            Success = result.Success,
+            Delivered = result.Delivered,
+            Error = result.Error
+        });
     }
 
     /// <summary>
@@ -98,28 +111,38 @@ public class PushNotificationController : ControllerBase
     /// </summary>
     [HttpPost("users/batch")]
     [ApiKeyAuthorize(ApiScopes.PushSend, AllowJwt = true)]
-    public async Task<ActionResult> SendToUsers([FromBody] BatchNotificationRequest request)
+    public async Task<ActionResult<BatchPushResponse>> SendToUsers([FromBody] BatchNotificationRequest request)
     {
         var results = new List<BatchNotificationResult>();
+        var onlineCount = 0;
+        var deliveredCount = 0;
 
         foreach (var userId in request.UserIds)
         {
-            await _notificationService.SendToUserAsync(userId, request.Type, request.Payload);
+            var result = await _notificationService.SendToUserAsync(userId, request.Type, request.Payload);
+
+            if (result.UserOnline) onlineCount++;
+            if (result.Delivered) deliveredCount++;
+
             results.Add(new BatchNotificationResult
             {
                 UserId = userId,
-                IsConnected = _notificationService.IsUserConnected(userId)
+                UserOnline = result.UserOnline,
+                Delivered = result.Delivered
             });
         }
 
         _logger.LogInformation(
-            "Batch notification sent to {Count} users, type: {Type}",
-            request.UserIds.Count, request.Type);
+            "Batch notification sent to {Count} users, type: {Type}, online: {Online}, delivered: {Delivered}",
+            request.UserIds.Count, request.Type, onlineCount, deliveredCount);
 
-        return Ok(new {
-            success = true,
-            message = $"Notification sent to {request.UserIds.Count} users",
-            results
+        return Ok(new BatchPushResponse
+        {
+            Success = true,
+            TotalUsers = request.UserIds.Count,
+            OnlineUsers = onlineCount,
+            DeliveredCount = deliveredCount,
+            Results = results
         });
     }
 }
@@ -163,10 +186,118 @@ public class UserConnectionStatus
     public bool IsConnected { get; set; }
 }
 
+/// <summary>
+/// Response from a push notification attempt
+/// </summary>
+public class PushResponse
+{
+    /// <summary>
+    /// Whether the notification was processed successfully (no errors)
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Whether the user was connected at the time of sending
+    /// </summary>
+    public bool UserOnline { get; set; }
+
+    /// <summary>
+    /// Whether SignalR successfully delivered the notification
+    /// </summary>
+    public bool Delivered { get; set; }
+
+    /// <summary>
+    /// Error message if Success is false
+    /// </summary>
+    public string? Error { get; set; }
+}
+
+/// <summary>
+/// Response from a site-wide push notification
+/// </summary>
+public class SitePushResponse
+{
+    /// <summary>
+    /// Whether the notification was processed successfully
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Whether SignalR successfully sent to the site group
+    /// </summary>
+    public bool Delivered { get; set; }
+
+    /// <summary>
+    /// Number of users currently connected to this site
+    /// </summary>
+    public int ConnectedUsers { get; set; }
+
+    /// <summary>
+    /// Error message if Success is false
+    /// </summary>
+    public string? Error { get; set; }
+}
+
+/// <summary>
+/// Response from a broadcast notification
+/// </summary>
+public class BroadcastPushResponse
+{
+    /// <summary>
+    /// Whether the notification was processed successfully
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Whether SignalR successfully broadcast the notification
+    /// </summary>
+    public bool Delivered { get; set; }
+
+    /// <summary>
+    /// Error message if Success is false
+    /// </summary>
+    public string? Error { get; set; }
+}
+
+/// <summary>
+/// Result for each user in a batch notification
+/// </summary>
 public class BatchNotificationResult
 {
     public int UserId { get; set; }
-    public bool IsConnected { get; set; }
+    public bool UserOnline { get; set; }
+    public bool Delivered { get; set; }
+}
+
+/// <summary>
+/// Response from a batch notification request
+/// </summary>
+public class BatchPushResponse
+{
+    /// <summary>
+    /// Whether the batch was processed successfully
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Total users in the batch
+    /// </summary>
+    public int TotalUsers { get; set; }
+
+    /// <summary>
+    /// Number of users who were online
+    /// </summary>
+    public int OnlineUsers { get; set; }
+
+    /// <summary>
+    /// Number of successful deliveries
+    /// </summary>
+    public int DeliveredCount { get; set; }
+
+    /// <summary>
+    /// Individual results per user
+    /// </summary>
+    public List<BatchNotificationResult> Results { get; set; } = new();
 }
 
 #endregion
