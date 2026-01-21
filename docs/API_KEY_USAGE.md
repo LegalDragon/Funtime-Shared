@@ -206,6 +206,174 @@ Push endpoints return detailed delivery status to help you track notification de
 
 **Note:** The shared notification service handles real-time delivery only. Each site should persist notification history in its own database for user notification pages.
 
+## SignalR Client Integration
+
+Connect to the shared SignalR hub to receive real-time notifications in your client application.
+
+### Connection Setup
+
+**JavaScript/TypeScript:**
+```javascript
+import * as signalR from '@microsoft/signalr';
+
+const connection = new signalR.HubConnectionBuilder()
+  .withUrl('https://identity.example.com/hubs/notifications', {
+    accessTokenFactory: () => userJwtToken
+  })
+  .withAutomaticReconnect()
+  .build();
+
+await connection.start();
+
+// Join your site's notification group
+await connection.invoke('JoinSiteGroup', 'your-site-key');
+```
+
+### Hub Methods
+
+| Method | Description |
+|--------|-------------|
+| `JoinSiteGroup(siteKey)` | Join a site-specific notification group |
+| `LeaveSiteGroup(siteKey)` | Leave a site-specific notification group |
+
+### Receiving Notifications
+
+```javascript
+connection.on('ReceiveNotification', (notification) => {
+  // notification = { type: string, payload: object, timestamp: string }
+  console.log('Received:', notification.type, notification.payload);
+});
+```
+
+### Route-Aware Notification Handling
+
+Your client can detect the current page and decide how to display notifications:
+
+```javascript
+connection.on('ReceiveNotification', (notification) => {
+  const { type, payload } = notification;
+  const currentPath = window.location.pathname;
+
+  // Define handlers per notification type
+  const handlers = {
+    'order_update': {
+      relevantPaths: ['/orders', '/order/'],
+      onRelevantPage: () => refreshOrdersList(),
+      onOtherPage: () => showToast(`Order #${payload.orderId} updated`)
+    },
+    'new_message': {
+      relevantPaths: ['/messages', '/inbox'],
+      onRelevantPage: () => appendNewMessage(payload),
+      onOtherPage: () => {
+        incrementUnreadBadge();
+        showToast(`New message from ${payload.senderName}`);
+      }
+    },
+    'comment_added': {
+      relevantPaths: ['/post/'],
+      onRelevantPage: () => appendComment(payload),
+      onOtherPage: () => showToast(`${payload.author} commented on your post`)
+    }
+  };
+
+  const handler = handlers[type];
+  if (!handler) {
+    // Default: show toast for unknown types
+    showToast(payload.message || 'New notification');
+    return;
+  }
+
+  // Check if user is on a relevant page
+  const isRelevant = handler.relevantPaths.some(path => currentPath.includes(path));
+
+  if (isRelevant) {
+    handler.onRelevantPage();
+  } else {
+    handler.onOtherPage();
+  }
+});
+```
+
+### React Integration Example
+
+```typescript
+import { useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'your-toast-library';
+
+function useNotificationHandler(connection: signalR.HubConnection) {
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handler = (notification: Notification) => {
+      const { type, payload } = notification;
+
+      switch (type) {
+        case 'order_update':
+          if (location.pathname.startsWith('/orders')) {
+            // Refresh data if on orders page
+            queryClient.invalidateQueries(['orders']);
+          } else {
+            toast.info(`Order #${payload.orderId} updated`);
+          }
+          break;
+
+        case 'new_message':
+          if (location.pathname === '/messages') {
+            queryClient.invalidateQueries(['messages']);
+          } else {
+            toast.info(`Message from ${payload.sender}`, {
+              onClick: () => navigate('/messages')
+            });
+          }
+          break;
+
+        default:
+          toast.info(payload.message || 'New notification');
+      }
+    };
+
+    connection.on('ReceiveNotification', handler);
+    return () => connection.off('ReceiveNotification', handler);
+  }, [connection, location.pathname, queryClient]);
+}
+```
+
+### Recommended Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Your Site Backend                         │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Event occurs (new order, message, etc.)                     │
+│  2. Save notification to YOUR database                          │
+│  3. Call POST /api/push/user/{userId} with API key              │
+│  4. Store delivery status from response                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Shared Identity Service                        │
+├─────────────────────────────────────────────────────────────────┤
+│  • Receives push request                                        │
+│  • Sends via SignalR to user's connections                      │
+│  • Returns { success, userOnline, delivered }                   │
+│  • Does NOT persist - stateless delivery only                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Your Site Frontend                          │
+├─────────────────────────────────────────────────────────────────┤
+│  • Connected to /hubs/notifications via SignalR                 │
+│  • Joined site group via JoinSiteGroup('your-site-key')         │
+│  • Receives notification in ReceiveNotification handler         │
+│  • Checks current route to decide: update UI or show toast      │
+│  • User views notification history from YOUR site's /notifications│
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ## Error Responses
 
 ### 401 Unauthorized
