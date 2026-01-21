@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save, CheckCircle, ExternalLink, Radio, Mail, Phone, Send, AlertCircle, ShieldCheck, FileType } from 'lucide-react';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save, CheckCircle, ExternalLink, Radio, Mail, Phone, Send, AlertCircle, ShieldCheck, FileType, Key } from 'lucide-react';
 import { adminApi, assetApi, settingsApi, getCurrentUser } from '../utils/api';
 import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse, AdminPaymentMethod, UserSiteInfo } from '../utils/api';
 import { AssetUploadModal } from '../components/AssetUploadModal';
 import { NotificationsTab } from '../components/NotificationsTab';
 import { PushTestTab } from '../components/PushTestTab';
 import { FileTypesTab } from '../components/FileTypesTab';
+import { ApiKeysTab } from '../components/ApiKeysTab';
 import { PaymentModal } from '../components/PaymentModal';
 import { SiteLogoPreview } from '../components/SiteLogoOverlay';
 import { RichTextEditor } from '../components/RichTextEditor';
@@ -14,7 +15,7 @@ import { config } from '../utils/config';
 // Stripe publishable key from runtime config
 const STRIPE_PUBLISHABLE_KEY = config.STRIPE_PUBLISHABLE_KEY;
 
-type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications' | 'push' | 'filetypes' | 'settings';
+type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications' | 'push' | 'filetypes' | 'apikeys' | 'settings';
 
 export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -586,6 +587,17 @@ export function AdminDashboardPage() {
           >
             <FileType className="w-4 h-4" />
             File Types
+          </button>
+          <button
+            onClick={() => setActiveTab('apikeys')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'apikeys'
+                ? 'bg-primary-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            API Keys
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -1361,6 +1373,9 @@ export function AdminDashboardPage() {
 
         {/* File Types Tab */}
         {activeTab === 'filetypes' && <FileTypesTab />}
+
+        {/* API Keys Tab */}
+        {activeTab === 'apikeys' && <ApiKeysTab />}
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (

@@ -57,6 +57,10 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<ISmsService, TwilioSmsService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IStripeService, StripeService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
+// Memory cache for API key validation
+builder.Services.AddMemoryCache();
 
 // HttpClient for OAuth providers
 builder.Services.AddHttpClient();

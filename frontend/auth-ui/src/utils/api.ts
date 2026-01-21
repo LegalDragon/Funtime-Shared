@@ -1356,3 +1356,121 @@ export const settingsApi = {
     });
   },
 };
+
+// ============================================
+// API Keys API
+// ============================================
+
+export interface ApiKeyResponse {
+  id: number;
+  partnerKey: string;
+  partnerName: string;
+  keyMasked: string;
+  keyPrefix: string;
+  scopes: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute: number;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastUsedAt?: string;
+  usageCount: number;
+  description?: string;
+  createdBy?: string;
+}
+
+export interface ApiKeyCreatedResponse extends ApiKeyResponse {
+  apiKey: string; // Full key, only shown once on create/regenerate
+}
+
+export interface CreateApiKeyRequest {
+  partnerKey: string;
+  partnerName: string;
+  scopes: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute?: number;
+  expiresAt?: string;
+  description?: string;
+}
+
+export interface UpdateApiKeyRequest {
+  partnerName?: string;
+  scopes?: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute?: number;
+  isActive?: boolean;
+  expiresAt?: string;
+  description?: string;
+}
+
+export interface ApiScopeInfo {
+  name: string;
+  description: string;
+  category: string;
+}
+
+export interface ApiScopesResponse {
+  scopes: ApiScopeInfo[];
+}
+
+export const apiKeysApi = {
+  // Get all API keys
+  async getAll(): Promise<ApiKeyResponse[]> {
+    return request('/admin/api-keys', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Get available scopes
+  async getScopes(): Promise<ApiScopesResponse> {
+    return request('/admin/api-keys/scopes', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Create new API key
+  async create(data: CreateApiKeyRequest): Promise<ApiKeyCreatedResponse> {
+    return request('/admin/api-keys', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update API key
+  async update(id: number, data: UpdateApiKeyRequest): Promise<ApiKeyResponse> {
+    return request(`/admin/api-keys/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete API key
+  async delete(id: number): Promise<{ success: boolean; message: string }> {
+    return request(`/admin/api-keys/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Regenerate API key
+  async regenerate(id: number): Promise<ApiKeyCreatedResponse> {
+    return request(`/admin/api-keys/${id}/regenerate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Toggle API key active status
+  async toggle(id: number): Promise<ApiKeyResponse> {
+    return request(`/admin/api-keys/${id}/toggle`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+};
