@@ -317,10 +317,11 @@ public class AssetController : ControllerBase
     }
 
     /// <summary>
-    /// Get asset file by ID (redirects to external URL for linked assets) - supports API key with assets:read scope
+    /// Get asset file by ID (redirects to external URL for linked assets)
+    /// Public assets are accessible anonymously, private assets require JWT authentication
     /// </summary>
     [HttpGet("{id:int}")]
-    [ApiKeyAuthorize(ApiScopes.AssetsRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAsset(int id)
     {
         var asset = await _context.Assets.FindAsync(id);
@@ -329,7 +330,8 @@ public class AssetController : ControllerBase
             return NotFound();
         }
 
-        // Check if asset is public or user is authenticated
+        // Public assets are accessible to anyone
+        // Private assets require authenticated user
         if (!asset.IsPublic)
         {
             var userId = GetCurrentUserId();
@@ -362,10 +364,11 @@ public class AssetController : ControllerBase
     }
 
     /// <summary>
-    /// Get asset metadata by ID (supports API key with assets:read scope)
+    /// Get asset metadata by ID
+    /// Public assets are accessible anonymously, private assets require authentication
     /// </summary>
     [HttpGet("{id:int}/info")]
-    [ApiKeyAuthorize(ApiScopes.AssetsRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<ActionResult<AssetInfoResponse>> GetAssetInfo(int id)
     {
         var asset = await _context.Assets.FindAsync(id);

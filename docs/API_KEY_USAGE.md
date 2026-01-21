@@ -121,10 +121,17 @@ Your API key may be granted one or more of the following scopes:
 | POST | `/sites/role` | Update user's site role |
 
 ### `assets:read`
+
+**Note:** Asset GET endpoints use different auth than other endpoints:
+- **Public assets** (`isPublic: true`): Accessible anonymously - no auth required
+- **Private assets**: Require JWT authentication
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/asset/{id}` | Get asset file by ID |
-| GET | `/asset/{id}/info` | Get asset metadata |
+| GET | `/asset/{id}` | Get asset file (public=anonymous, private=JWT) |
+| GET | `/asset/{id}/info` | Get asset metadata (public=anonymous, private=JWT) |
+
+For partner backends needing private asset access, pass the user's JWT token.
 
 ### `assets:write`
 | Method | Endpoint | Description |
