@@ -9,7 +9,7 @@ namespace Funtime.Identity.Api.Controllers;
 /// Public endpoint for partners to test their API key integration
 /// </summary>
 [ApiController]
-[Route("api/apikey")]
+[Route("apikey")]
 public class ApiKeyTestController : ControllerBase
 {
     private readonly IApiKeyService _apiKeyService;

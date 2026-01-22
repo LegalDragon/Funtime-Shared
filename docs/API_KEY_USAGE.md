@@ -14,7 +14,7 @@ Before integrating, use these endpoints to verify your API key is working:
 
 ### Test API Key
 ```bash
-curl -X GET "https://identity.example.com/api/apikey/test" \
+curl -X GET "https://identity.example.com/apikey/test" \
   -H "X-Api-Key: pk_your_key_here"
 ```
 
@@ -38,7 +38,7 @@ curl -X GET "https://identity.example.com/api/apikey/test" \
 
 ### Test Specific Scope
 ```bash
-curl -X GET "https://identity.example.com/api/apikey/test/scope/push:send" \
+curl -X GET "https://identity.example.com/apikey/test/scope/push:send" \
   -H "X-Api-Key: pk_your_key_here"
 ```
 
@@ -54,7 +54,7 @@ curl -X GET "https://identity.example.com/api/apikey/test/scope/push:send" \
 
 ### List Available Scopes (No Auth Required)
 ```bash
-curl -X GET "https://identity.example.com/api/apikey/scopes"
+curl -X GET "https://identity.example.com/apikey/scopes"
 ```
 
 ## Getting an API Key
