@@ -8,6 +8,55 @@ API keys provide a simple way for trusted applications to authenticate with the 
 
 Most endpoints support **dual authentication** - you can use either an API key OR a JWT token. API key takes precedence if both are provided.
 
+## Testing Your API Key
+
+Before integrating, use these endpoints to verify your API key is working:
+
+### Test API Key
+```bash
+curl -X GET "https://identity.example.com/apikey/test" \
+  -H "X-Api-Key: pk_your_key_here"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "API key is valid and working!",
+  "partnerKey": "mysite",
+  "partnerName": "My Site",
+  "scopes": ["auth:validate", "users:read", "push:send"],
+  "rateLimitPerMinute": 60,
+  "isActive": true,
+  "clientIp": "192.168.1.100",
+  "allowedIps": null,
+  "expiresAt": null,
+  "lastUsedAt": "2024-01-15T10:30:00Z",
+  "serverTime": "2024-01-15T10:35:00Z"
+}
+```
+
+### Test Specific Scope
+```bash
+curl -X GET "https://identity.example.com/apikey/test/scope/push:send" \
+  -H "X-Api-Key: pk_your_key_here"
+```
+
+**Response:**
+```json
+{
+  "scope": "push:send",
+  "isValidScope": true,
+  "hasScope": true,
+  "message": "Your API key has the 'push:send' scope."
+}
+```
+
+### List Available Scopes (No Auth Required)
+```bash
+curl -X GET "https://identity.example.com/apikey/scopes"
+```
+
 ## Getting an API Key
 
 Contact your system administrator to obtain an API key. You will receive:
