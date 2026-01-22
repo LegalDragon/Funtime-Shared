@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Dapper;
 using Stripe;
+using Funtime.Identity.Api.Auth;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.DTOs;
 using Funtime.Identity.Api.Models;
@@ -433,9 +434,11 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Update user
+    /// Update user (supports API key with users:write scope for email/password updates)
     /// </summary>
     [HttpPut("users/{id}")]
+    [AllowAnonymous] // Override class-level auth - ApiKeyAuthorize handles it
+    [ApiKeyAuthorize(ApiScopes.UsersWrite, AllowJwt = true)]
     public async Task<ActionResult<AdminUserResponse>> UpdateUser(int id, [FromBody] UpdateUserRequest request)
     {
         var user = await _context.Users.FindAsync(id);

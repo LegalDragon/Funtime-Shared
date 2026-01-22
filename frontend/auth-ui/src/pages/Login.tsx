@@ -156,6 +156,16 @@ export function LoginPage() {
 
     // SU users go to admin dashboard
     if (systemRole === 'SU') {
+      // Store the return URL origin for localhost development
+      // so admin can visit sites on the same localhost port
+      if (redirectUrl) {
+        try {
+          const url = new URL(redirectUrl);
+          localStorage.setItem('dev_site_origin', url.origin);
+        } catch {
+          // Invalid URL, ignore
+        }
+      }
       navigate('/admin');
       return;
     }

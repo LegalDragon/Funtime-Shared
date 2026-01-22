@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save, CheckCircle, ExternalLink, Radio, Mail, Phone, Send, AlertCircle, ShieldCheck } from 'lucide-react';
-import { adminApi, assetApi, settingsApi } from '../utils/api';
-import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse, AdminPaymentMethod } from '../utils/api';
+import { Users, Globe, CreditCard, LogOut, Search, ChevronRight, Edit2, X, Loader2, TrendingUp, Upload, Trash2, Bell, Settings, Image, FileText, Save, CheckCircle, ExternalLink, Radio, Mail, Phone, Send, AlertCircle, ShieldCheck, FileType, Key } from 'lucide-react';
+import { adminApi, assetApi, settingsApi, getCurrentUser } from '../utils/api';
+import type { Site, AdminUser, AdminUserDetail, AdminPayment, AdminStats, AssetUploadResponse, AdminPaymentMethod, UserSiteInfo } from '../utils/api';
 import { AssetUploadModal } from '../components/AssetUploadModal';
 import { NotificationsTab } from '../components/NotificationsTab';
 import { PushTestTab } from '../components/PushTestTab';
+import { FileTypesTab } from '../components/FileTypesTab';
+import { ApiKeysTab } from '../components/ApiKeysTab';
 import { PaymentModal } from '../components/PaymentModal';
 import { SiteLogoPreview } from '../components/SiteLogoOverlay';
 import { RichTextEditor } from '../components/RichTextEditor';
@@ -13,7 +15,7 @@ import { config } from '../utils/config';
 // Stripe publishable key from runtime config
 const STRIPE_PUBLISHABLE_KEY = config.STRIPE_PUBLISHABLE_KEY;
 
-type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications' | 'push' | 'settings';
+type Tab = 'overview' | 'sites' | 'users' | 'payments' | 'notifications' | 'push' | 'filetypes' | 'apikeys' | 'settings';
 
 export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -86,18 +88,70 @@ export function AdminDashboardPage() {
   const [termsSaved, setTermsSaved] = useState(false);
   const [privacySaved, setPrivacySaved] = useState(false);
 
+  // Current user's site roles (for passing to sites when visiting)
+  const [currentUserSites, setCurrentUserSites] = useState<UserSiteInfo[]>([]);
+
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     window.location.href = '/login';
   };
 
-  const handleVisitSite = (siteUrl: string | undefined) => {
+  const handleVisitSite = (siteUrl: string | undefined, siteKey?: string) => {
     if (!siteUrl) return;
     const token = localStorage.getItem('auth_token');
     if (token) {
-      window.location.href = `${siteUrl}/auth/callback?token=${encodeURIComponent(token)}`;
+      // Use stored dev origin if it's a localhost URL (for local development)
+      // This handles the case where shared auth is on production but site is on localhost
+      let targetOrigin = siteUrl;
+      const devSiteOrigin = localStorage.getItem('dev_site_origin');
+      if (devSiteOrigin) {
+        try {
+          const devUrl = new URL(devSiteOrigin);
+          if (devUrl.hostname === 'localhost' || devUrl.hostname === '127.0.0.1') {
+            targetOrigin = devSiteOrigin;
+          }
+        } catch {
+          // Invalid URL, use production
+        }
+      }
+
+      // Build URL with token and site role info (same as non-SU users get)
+      const url = new URL(`${targetOrigin}/auth/callback`);
+      url.searchParams.set('token', token);
+
+      // Pass system role (e.g., SU)
+      const currentUser = getCurrentUser();
+      if (currentUser?.role) {
+        url.searchParams.set('systemRole', currentUser.role);
+      }
+
+      // Find user's role for this site and pass it along
+      if (siteKey) {
+        const userSite = currentUserSites.find(s => s.siteKey.toLowerCase() === siteKey.toLowerCase());
+        if (userSite?.role) {
+          url.searchParams.set('siteRole', userSite.role);
+          // Check if user is admin or moderator for this site
+          const isAdmin = userSite.role === 'admin' || userSite.role === 'moderator';
+          url.searchParams.set('isSiteAdmin', isAdmin.toString());
+        }
+      }
+
+      window.location.href = url.toString();
     } else {
       window.location.href = siteUrl;
+    }
+  };
+
+  // Load current user's site roles for visiting sites
+  const loadCurrentUserSites = async () => {
+    try {
+      const user = getCurrentUser();
+      if (user?.id && !isNaN(user.id) && user.id > 0) {
+        const userDetail = await adminApi.getUser(user.id);
+        setCurrentUserSites(userDetail.sites || []);
+      }
+    } catch (err) {
+      console.error('Failed to load current user sites:', err);
     }
   };
 
@@ -105,6 +159,7 @@ export function AdminDashboardPage() {
   useEffect(() => {
     loadStats();
     loadSites(); // Load sites for filter dropdowns
+    loadCurrentUserSites(); // Load current user's site roles for visit button
   }, []);
 
   // Load data when tab changes
@@ -523,6 +578,28 @@ export function AdminDashboardPage() {
             Push Test
           </button>
           <button
+            onClick={() => setActiveTab('filetypes')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'filetypes'
+                ? 'bg-primary-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FileType className="w-4 h-4" />
+            File Types
+          </button>
+          <button
+            onClick={() => setActiveTab('apikeys')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'apikeys'
+                ? 'bg-primary-500 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            API Keys
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'settings'
@@ -619,7 +696,7 @@ export function AdminDashboardPage() {
                       )}
                       {site.url ? (
                         <button
-                          onClick={() => handleVisitSite(site.url)}
+                          onClick={() => handleVisitSite(site.url, site.key)}
                           className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -1293,6 +1370,12 @@ export function AdminDashboardPage() {
 
         {/* Push Test Tab */}
         {activeTab === 'push' && <PushTestTab />}
+
+        {/* File Types Tab */}
+        {activeTab === 'filetypes' && <FileTypesTab />}
+
+        {/* API Keys Tab */}
+        {activeTab === 'apikeys' && <ApiKeysTab />}
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (

@@ -27,6 +27,12 @@ export function getReturnTo(): string | null {
   return params.get('returnTo');
 }
 
+// Get language code from query params (case-insensitive)
+export function getLangcode(): string | null {
+  const params = getQueryParams();
+  return params.get('Langcode') || params.get('langcode') || params.get('LangCode');
+}
+
 // Redirect back to the original site with token and optional site role info
 export function redirectWithToken(
   token: string,
@@ -34,6 +40,7 @@ export function redirectWithToken(
 ): void {
   const redirectUrl = getRedirectUrl();
   const returnTo = getReturnTo();
+  const langcode = getLangcode();
 
   if (!redirectUrl) {
     // No redirect URL, just show success or go to a default page
@@ -47,6 +54,11 @@ export function redirectWithToken(
 
   if (returnTo) {
     url.searchParams.set('returnTo', returnTo);
+  }
+
+  // Preserve language code for the destination site
+  if (langcode) {
+    url.searchParams.set('Langcode', langcode);
   }
 
   // Include site role information if provided

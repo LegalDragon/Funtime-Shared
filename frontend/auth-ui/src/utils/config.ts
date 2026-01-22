@@ -5,6 +5,7 @@
 interface RuntimeConfig {
   API_URL: string;
   STRIPE_PUBLISHABLE_KEY: string;
+  DEV_SITE_URLS?: Record<string, string>; // Map site keys to localhost URLs for development
 }
 
 declare global {
@@ -27,3 +28,16 @@ function getConfig(): RuntimeConfig {
 }
 
 export const config = getConfig();
+
+// Check if running on localhost
+export function isLocalhost(): boolean {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
+
+// Get the appropriate site URL (dev or prod)
+export function getSiteUrl(siteKey: string, prodUrl: string): string {
+  if (isLocalhost() && config.DEV_SITE_URLS?.[siteKey]) {
+    return config.DEV_SITE_URLS[siteKey];
+  }
+  return prodUrl;
+}

@@ -62,10 +62,14 @@
     "creating": "Creating account...",
     "registrationFailed": "Registration failed",
     "passwordsDoNotMatch": "Passwords do not match",
-    "agreeToTerms": "I agree to the",
+    "agreeToTerms": "By creating an account, you agree to our",
     "termsOfService": "Terms of Service",
     "and": "and",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "createPassword": "Create a password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "passwordRequirement": "Must be at least 8 characters",
+    "sendCode": "Send Code"
   },
   "forgotPassword": {
     "title": "Reset Password",
@@ -75,7 +79,23 @@
     "checkEmail": "Check your email",
     "resetLinkSent": "We've sent a password reset link to {{email}}",
     "backToLogin": "Back to Login",
-    "resetFailed": "Failed to send reset link"
+    "resetFailed": "Failed to send reset link",
+    "passwordReset": "Password reset",
+    "accountCreated": "Account created",
+    "enterCode": "Enter code",
+    "enterEmailDescription": "Enter your email address and we'll send you a verification code to reset your password.",
+    "enterPhoneDescription": "Enter your phone number and we'll send you a verification code to reset your password.",
+    "codeSentTo": "We sent a code to {{destination}}. Enter it below.",
+    "changeEmail": "Change email",
+    "verifyCode": "Verify Code",
+    "noAccountEmail": "No account found with this email.",
+    "noAccountPhone": "No account found with this phone number.",
+    "createOneNow": "Create one now?",
+    "tryDifferentEmail": "Try a different email",
+    "tryDifferentPhone": "Try a different phone number",
+    "accountCreatedTitle": "Account Created!",
+    "accountCreatedMessage": "Your account has been created successfully. You are now logged in.",
+    "rememberPassword": "Remember your password?"
   },
   "resetPassword": {
     "title": "Set New Password",
@@ -84,7 +104,11 @@
     "resetPassword": "Reset Password",
     "resetting": "Resetting...",
     "resetSuccess": "Password reset successfully",
-    "resetFailed": "Failed to reset password"
+    "resetFailed": "Failed to reset password",
+    "enterNewPassword": "Enter your new password below.",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "resetSuccessMessage": "Your password has been reset successfully. You can now sign in with your new password."
   },
   "verify": {
     "title": "Verify Your Account",

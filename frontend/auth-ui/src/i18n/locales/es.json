@@ -62,10 +62,14 @@
     "creating": "Creando cuenta...",
     "registrationFailed": "Error en el registro",
     "passwordsDoNotMatch": "Las contrasenas no coinciden",
-    "agreeToTerms": "Acepto los",
+    "agreeToTerms": "Al crear una cuenta, aceptas nuestros",
     "termsOfService": "Terminos de Servicio",
     "and": "y",
-    "privacyPolicy": "Politica de Privacidad"
+    "privacyPolicy": "Politica de Privacidad",
+    "createPassword": "Crear una contrasena",
+    "confirmPasswordPlaceholder": "Confirmar tu contrasena",
+    "passwordRequirement": "Debe tener al menos 8 caracteres",
+    "sendCode": "Enviar Codigo"
   },
   "forgotPassword": {
     "title": "Restablecer Contrasena",
@@ -75,7 +79,23 @@
     "checkEmail": "Revisa tu correo",
     "resetLinkSent": "Hemos enviado un enlace a {{email}}",
     "backToLogin": "Volver al Inicio",
-    "resetFailed": "Error al enviar el enlace"
+    "resetFailed": "Error al enviar el enlace",
+    "passwordReset": "Contrasena restablecida",
+    "accountCreated": "Cuenta creada",
+    "enterCode": "Ingresa el codigo",
+    "enterEmailDescription": "Ingresa tu correo electronico y te enviaremos un codigo de verificacion para restablecer tu contrasena.",
+    "enterPhoneDescription": "Ingresa tu numero de telefono y te enviaremos un codigo de verificacion para restablecer tu contrasena.",
+    "codeSentTo": "Enviamos un codigo a {{destination}}. Ingresalo abajo.",
+    "changeEmail": "Cambiar correo",
+    "verifyCode": "Verificar Codigo",
+    "noAccountEmail": "No se encontro una cuenta con este correo.",
+    "noAccountPhone": "No se encontro una cuenta con este numero.",
+    "createOneNow": "Crear una ahora?",
+    "tryDifferentEmail": "Probar otro correo",
+    "tryDifferentPhone": "Probar otro numero",
+    "accountCreatedTitle": "Cuenta Creada!",
+    "accountCreatedMessage": "Tu cuenta ha sido creada exitosamente. Ya iniciaste sesion.",
+    "rememberPassword": "Recuerdas tu contrasena?"
   },
   "resetPassword": {
     "title": "Nueva Contrasena",
@@ -84,7 +104,11 @@
     "resetPassword": "Restablecer Contrasena",
     "resetting": "Restableciendo...",
     "resetSuccess": "Contrasena restablecida",
-    "resetFailed": "Error al restablecer"
+    "resetFailed": "Error al restablecer",
+    "enterNewPassword": "Ingresa tu nueva contrasena abajo.",
+    "newPasswordPlaceholder": "Ingresa nueva contrasena",
+    "confirmNewPasswordPlaceholder": "Confirma nueva contrasena",
+    "resetSuccessMessage": "Tu contrasena ha sido restablecida exitosamente. Ya puedes iniciar sesion con tu nueva contrasena."
   },
   "verify": {
     "title": "Verificar tu Cuenta",

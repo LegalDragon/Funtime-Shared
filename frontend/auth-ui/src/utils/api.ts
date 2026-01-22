@@ -302,7 +302,9 @@ function getAuthHeaders(): HeadersInit {
 
 // JWT token payload structure (using .NET claim names)
 export interface TokenPayload {
-  nameid: string; // User ID (ClaimTypes.NameIdentifier)
+  nameid?: string; // User ID short name
+  // .NET ClaimTypes.NameIdentifier uses the full URL
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'?: string;
   email?: string; // ClaimTypes.Email
   // ClaimTypes.Role maps to this long URL in the JWT
   'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string;
@@ -347,11 +349,12 @@ export function getCurrentUser(): { id: number; email?: string; role?: string; s
     return null;
   }
 
-  // .NET ClaimTypes.Role uses the full URL as the claim name
+  // .NET ClaimTypes use full URLs as claim names
+  const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || payload.nameid;
   const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role;
 
   return {
-    id: parseInt(payload.nameid),
+    id: parseInt(userId || '0'),
     email: payload.email,
     role,
     sites: payload.sites ? JSON.parse(payload.sites) : [],
@@ -702,6 +705,24 @@ export interface AdminPaymentMethod {
 // Asset types
 export type AssetType = 'image' | 'video' | 'document' | 'audio' | 'link';
 
+export interface AssetFileType {
+  id: number;
+  mimeType: string;
+  extensions: string;
+  category: string;
+  maxSizeMB: number;
+  isEnabled: boolean;
+  displayName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AssetFileTypesResponse {
+  fileTypes: AssetFileType[];
+  acceptString: string;
+  byCategory: Record<string, AssetFileType[]>;
+}
+
 export interface AssetUploadResponse {
   assetId: number;
   assetType: AssetType;
@@ -740,6 +761,11 @@ export interface RegisterLinkRequest {
 
 // Asset API methods
 export const assetApi = {
+  // Get enabled file types for upload modal
+  async getEnabledFileTypes(): Promise<AssetFileTypesResponse> {
+    return request('/admin/asset-file-types/enabled', {});
+  },
+
   // Upload a file and get asset ID
   async upload(
     file: File,
@@ -818,6 +844,71 @@ export const assetApi = {
       const error = await response.json().catch(() => ({ message: 'Delete failed' }));
       throw new Error(error.message || 'Delete failed');
     }
+  },
+};
+
+// Asset File Types Admin API - for managing allowed file types
+export const fileTypesApi = {
+  // Get all file types (admin only)
+  async getAll(): Promise<AssetFileType[]> {
+    return request('/admin/asset-file-types', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Get file type by ID
+  async getById(id: number): Promise<AssetFileType> {
+    return request(`/admin/asset-file-types/${id}`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Create a new file type
+  async create(fileType: {
+    mimeType: string;
+    extensions: string;
+    category: string;
+    maxSizeMB?: number;
+    isEnabled?: boolean;
+    displayName?: string;
+  }): Promise<AssetFileType> {
+    return request('/admin/asset-file-types', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(fileType),
+    });
+  },
+
+  // Update a file type
+  async update(id: number, fileType: {
+    mimeType: string;
+    extensions: string;
+    category: string;
+    maxSizeMB: number;
+    isEnabled: boolean;
+    displayName?: string;
+  }): Promise<AssetFileType> {
+    return request(`/admin/asset-file-types/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(fileType),
+    });
+  },
+
+  // Delete a file type
+  async delete(id: number): Promise<void> {
+    return request(`/admin/asset-file-types/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Toggle enabled status
+  async toggle(id: number): Promise<{ isEnabled: boolean }> {
+    return request(`/admin/asset-file-types/${id}/toggle`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
   },
 };
 
@@ -1262,6 +1353,124 @@ export const settingsApi = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({ content }),
+    });
+  },
+};
+
+// ============================================
+// API Keys API
+// ============================================
+
+export interface ApiKeyResponse {
+  id: number;
+  partnerKey: string;
+  partnerName: string;
+  keyMasked: string;
+  keyPrefix: string;
+  scopes: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute: number;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastUsedAt?: string;
+  usageCount: number;
+  description?: string;
+  createdBy?: string;
+}
+
+export interface ApiKeyCreatedResponse extends ApiKeyResponse {
+  apiKey: string; // Full key, only shown once on create/regenerate
+}
+
+export interface CreateApiKeyRequest {
+  partnerKey: string;
+  partnerName: string;
+  scopes: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute?: number;
+  expiresAt?: string;
+  description?: string;
+}
+
+export interface UpdateApiKeyRequest {
+  partnerName?: string;
+  scopes?: string[];
+  allowedIPs?: string[];
+  allowedOrigins?: string[];
+  rateLimitPerMinute?: number;
+  isActive?: boolean;
+  expiresAt?: string;
+  description?: string;
+}
+
+export interface ApiScopeInfo {
+  name: string;
+  description: string;
+  category: string;
+}
+
+export interface ApiScopesResponse {
+  scopes: ApiScopeInfo[];
+}
+
+export const apiKeysApi = {
+  // Get all API keys
+  async getAll(): Promise<ApiKeyResponse[]> {
+    return request('/admin/api-keys', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Get available scopes
+  async getScopes(): Promise<ApiScopesResponse> {
+    return request('/admin/api-keys/scopes', {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Create new API key
+  async create(data: CreateApiKeyRequest): Promise<ApiKeyCreatedResponse> {
+    return request('/admin/api-keys', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update API key
+  async update(id: number, data: UpdateApiKeyRequest): Promise<ApiKeyResponse> {
+    return request(`/admin/api-keys/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete API key
+  async delete(id: number): Promise<{ success: boolean; message: string }> {
+    return request(`/admin/api-keys/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Regenerate API key
+  async regenerate(id: number): Promise<ApiKeyCreatedResponse> {
+    return request(`/admin/api-keys/${id}/regenerate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+  },
+
+  // Toggle API key active status
+  async toggle(id: number): Promise<ApiKeyResponse> {
+    return request(`/admin/api-keys/${id}/toggle`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
     });
   },
 };

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { Upload, X, Loader2, Image, FileText, File, Video, Music, Link2, ExternalLink } from 'lucide-react';
-import { assetApi, type AssetUploadResponse, type AssetType } from '../utils/api';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Upload, X, Loader2, Image, FileText, File, Video, Music, Link2, ExternalLink, AlertCircle } from 'lucide-react';
+import { assetApi, type AssetUploadResponse, type AssetType, type AssetFileTypesResponse, type AssetFileType } from '../utils/api';
 
 type UploadMode = 'file' | 'link';
 
@@ -10,8 +10,8 @@ interface AssetUploadModalProps {
   onUploadComplete: (asset: AssetUploadResponse) => void;
   category?: string;
   siteKey?: string;
-  acceptedTypes?: string;
-  maxSizeMB?: number;
+  acceptedTypes?: string; // Override - if provided, disables dynamic loading
+  maxSizeMB?: number; // Fallback if no dynamic types
   title?: string;
   allowExternalLinks?: boolean;
   defaultAssetType?: AssetType;
@@ -24,6 +24,10 @@ const ASSET_TYPE_OPTIONS: { value: AssetType; label: string; icon: typeof Image 
   { value: 'audio', label: 'Audio', icon: Music },
   { value: 'link', label: 'Link', icon: Link2 },
 ];
+
+// Default fallback types if API fails
+const DEFAULT_ACCEPT_TYPES = 'image/*,video/*,audio/*,.pdf,.doc,.docx,.md,.html,.htm';
+const DEFAULT_MAX_SIZE_MB = 10;
 
 // Extract YouTube video ID from URL
 function extractYouTubeId(url: string): string | null {
@@ -67,8 +71,8 @@ export function AssetUploadModal({
   onUploadComplete,
   category,
   siteKey,
-  acceptedTypes = 'image/*,video/*,audio/*,.pdf,.doc,.docx',
-  maxSizeMB = 10,
+  acceptedTypes, // If provided, skip dynamic loading
+  maxSizeMB = DEFAULT_MAX_SIZE_MB,
   title = 'Upload Asset',
   allowExternalLinks = true,
   defaultAssetType,
@@ -82,10 +86,61 @@ export function AssetUploadModal({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dynamic file types state
+  const [fileTypesData, setFileTypesData] = useState<AssetFileTypesResponse | null>(null);
+  const [loadingFileTypes, setLoadingFileTypes] = useState(false);
+  const [fileTypesError, setFileTypesError] = useState<string | null>(null);
+
   // External link state
   const [externalUrl, setExternalUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [linkThumbnail, setLinkThumbnail] = useState<string | null>(null);
+
+  // Fetch file types when modal opens
+  useEffect(() => {
+    if (isOpen && !acceptedTypes && !fileTypesData && !loadingFileTypes) {
+      setLoadingFileTypes(true);
+      setFileTypesError(null);
+
+      assetApi.getEnabledFileTypes()
+        .then(data => {
+          setFileTypesData(data);
+        })
+        .catch(err => {
+          console.warn('Failed to load file types, using defaults:', err);
+          setFileTypesError('Using default file types');
+        })
+        .finally(() => {
+          setLoadingFileTypes(false);
+        });
+    }
+  }, [isOpen, acceptedTypes, fileTypesData, loadingFileTypes]);
+
+  // Get accept string for file input
+  const getAcceptString = useCallback(() => {
+    if (acceptedTypes) return acceptedTypes;
+    if (fileTypesData?.acceptString) return fileTypesData.acceptString;
+    return DEFAULT_ACCEPT_TYPES;
+  }, [acceptedTypes, fileTypesData]);
+
+  // Get max size for a specific mime type
+  const getMaxSizeForMimeType = useCallback((mimeType: string): number => {
+    if (!fileTypesData?.fileTypes) return maxSizeMB;
+
+    const matchingType = fileTypesData.fileTypes.find(
+      ft => ft.mimeType.toLowerCase() === mimeType.toLowerCase()
+    );
+
+    return matchingType?.maxSizeMB ?? maxSizeMB;
+  }, [fileTypesData, maxSizeMB]);
+
+  // Get display info for file validation
+  const getFileTypeInfo = useCallback((mimeType: string): AssetFileType | null => {
+    if (!fileTypesData?.fileTypes) return null;
+    return fileTypesData.fileTypes.find(
+      ft => ft.mimeType.toLowerCase() === mimeType.toLowerCase()
+    ) ?? null;
+  }, [fileTypesData]);
 
   // Auto-detect video URLs and get thumbnail
   useEffect(() => {
@@ -103,10 +158,14 @@ export function AssetUploadModal({
   const handleFileSelect = (selectedFile: File) => {
     setError(null);
 
-    // Validate file size
-    const maxBytes = maxSizeMB * 1024 * 1024;
+    // Get max size for this file type
+    const fileMaxSizeMB = getMaxSizeForMimeType(selectedFile.type);
+    const maxBytes = fileMaxSizeMB * 1024 * 1024;
+
     if (selectedFile.size > maxBytes) {
-      setError(`File size must be less than ${maxSizeMB}MB`);
+      const fileTypeInfo = getFileTypeInfo(selectedFile.type);
+      const typeName = fileTypeInfo?.displayName ?? selectedFile.type;
+      setError(`File size must be less than ${fileMaxSizeMB}MB for ${typeName}`);
       return;
     }
 
@@ -236,6 +295,22 @@ export function AssetUploadModal({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Get display max size (varies by category when using dynamic types)
+  const getDisplayMaxSize = (): string => {
+    if (!fileTypesData?.byCategory) return `${maxSizeMB}MB`;
+
+    // Get unique max sizes
+    const sizes = new Set(fileTypesData.fileTypes.map(ft => ft.maxSizeMB));
+    if (sizes.size === 1) {
+      return `${Array.from(sizes)[0]}MB`;
+    }
+
+    // Show range
+    const min = Math.min(...Array.from(sizes));
+    const max = Math.max(...Array.from(sizes));
+    return `${min}-${max}MB`;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -255,6 +330,22 @@ export function AssetUploadModal({
 
         {/* Content */}
         <div className="p-4 space-y-4">
+          {/* Loading file types indicator */}
+          {loadingFileTypes && (
+            <div className="flex items-center justify-center py-2 text-sm text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Loading file types...
+            </div>
+          )}
+
+          {/* File types error (non-blocking) */}
+          {fileTypesError && !loadingFileTypes && (
+            <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded">
+              <AlertCircle className="w-3 h-3 mr-1.5 flex-shrink-0" />
+              {fileTypesError}
+            </div>
+          )}
+
           {/* Upload Mode Tabs */}
           {allowExternalLinks && (
             <div className="flex border-b border-gray-200">
@@ -319,7 +410,7 @@ export function AssetUploadModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept={acceptedTypes}
+                  accept={getAcceptString()}
                   onChange={handleInputChange}
                   className="hidden"
                 />
@@ -350,7 +441,7 @@ export function AssetUploadModal({
                         Drag and drop or <span className="text-blue-600 font-medium">browse</span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Max size: {maxSizeMB}MB
+                        Max size: {getDisplayMaxSize()}
                       </p>
                     </div>
                   </div>
@@ -432,7 +523,7 @@ export function AssetUploadModal({
           </button>
           <button
             onClick={handleUpload}
-            disabled={(uploadMode === 'file' && !file) || (uploadMode === 'link' && !externalUrl) || uploading}
+            disabled={(uploadMode === 'file' && !file) || (uploadMode === 'link' && !externalUrl) || uploading || loadingFileTypes}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {uploading ? (

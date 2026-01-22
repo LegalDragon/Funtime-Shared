@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft, CheckCircle2, Loader2, Mail, Phone, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { authApi, settingsApi } from '../utils/api';
 import { getSiteDisplayName, getSiteKey, redirectWithToken, getRedirectUrl } from '../utils/redirect';
 import { SiteLogoOverlay } from '../components/SiteLogoOverlay';
@@ -9,6 +10,7 @@ type Step = 'input' | 'code' | 'password' | 'create-account' | 'success' | 'acco
 type RecoveryMode = 'email' | 'phone';
 
 export function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<RecoveryMode>('email');
   const [step, setStep] = useState<Step>('input');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,12 +69,12 @@ export function ForgotPasswordPage() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 'success': return 'Password reset';
-      case 'account-created': return 'Account created';
-      case 'create-account': return 'Create account';
-      case 'password': return 'Set new password';
-      case 'code': return 'Enter code';
-      default: return 'Reset password';
+      case 'success': return t('forgotPassword.passwordReset');
+      case 'account-created': return t('forgotPassword.accountCreated');
+      case 'create-account': return t('register.title');
+      case 'password': return t('resetPassword.title');
+      case 'code': return t('forgotPassword.enterCode');
+      default: return t('forgotPassword.title');
     }
   };
 
@@ -125,12 +127,12 @@ export function ForgotPasswordPage() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.passwordsDoNotMatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('validation.passwordTooShort', { min: 8 }));
       return;
     }
 
@@ -165,12 +167,12 @@ export function ForgotPasswordPage() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.passwordsDoNotMatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('validation.passwordTooShort', { min: 8 }));
       return;
     }
 
@@ -244,7 +246,7 @@ export function ForgotPasswordPage() {
                 }`}
               >
                 <Mail className="w-4 h-4" />
-                Email
+                {t('auth.email')}
               </button>
               <button
                 onClick={() => handleModeChange('phone')}
@@ -255,7 +257,7 @@ export function ForgotPasswordPage() {
                 }`}
               >
                 <Phone className="w-4 h-4" />
-                Phone
+                {t('auth.phone')}
               </button>
             </div>
           )}
@@ -271,13 +273,15 @@ export function ForgotPasswordPage() {
           {step === 'input' && (
             <form onSubmit={handleSendCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
-                Enter your {mode === 'email' ? 'email address' : 'phone number'} and we'll send you a verification code to reset your password.
+                {mode === 'email'
+                  ? t('forgotPassword.enterEmailDescription')
+                  : t('forgotPassword.enterPhoneDescription')}
               </p>
 
               {mode === 'email' ? (
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email address
+                    {t('auth.emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -286,13 +290,13 @@ export function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="you@example.com"
+                    placeholder={t('auth.emailPlaceholder')}
                   />
                 </div>
               ) : (
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
+                    {t('auth.phoneNumber')}
                   </label>
                   <input
                     type="tel"
@@ -301,7 +305,7 @@ export function ForgotPasswordPage() {
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder={t('auth.phonePlaceholder')}
                   />
                 </div>
               )}
@@ -314,10 +318,10 @@ export function ForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Sending...
+                    {t('forgotPassword.sending')}
                   </>
                 ) : (
-                  'Send Code'
+                  t('register.sendCode')
                 )}
               </button>
             </form>
@@ -327,12 +331,12 @@ export function ForgotPasswordPage() {
           {step === 'code' && (
             <form onSubmit={handleVerifyCode} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
-                We sent a code to <strong>{recoveryValue}</strong>. Enter it below.
+                {t('forgotPassword.codeSentTo', { destination: recoveryValue })}
               </p>
 
               <div>
                 <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
-                  Verification Code
+                  {t('phoneAuth.verificationCode')}
                 </label>
                 <input
                   type="text"
@@ -353,7 +357,7 @@ export function ForgotPasswordPage() {
                   className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Change {mode === 'email' ? 'email' : 'number'}
+                  {mode === 'email' ? t('forgotPassword.changeEmail') : t('phoneAuth.changeNumber')}
                 </button>
                 <button
                   type="button"
@@ -361,7 +365,7 @@ export function ForgotPasswordPage() {
                   disabled={isLoading}
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  Resend code
+                  {t('phoneAuth.resendCode')}
                 </button>
               </div>
 
@@ -373,10 +377,10 @@ export function ForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Verifying...
+                    {t('phoneAuth.verifying')}
                   </>
                 ) : (
-                  'Verify Code'
+                  t('forgotPassword.verifyCode')
                 )}
               </button>
             </form>
@@ -386,12 +390,12 @@ export function ForgotPasswordPage() {
           {step === 'password' && (
             <form onSubmit={handleResetPassword} className="space-y-5">
               <p className="text-sm text-gray-600 mb-4">
-                Enter your new password below.
+                {t('resetPassword.enterNewPassword')}
               </p>
 
               <div>
                 <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password
+                  {t('resetPassword.newPassword')}
                 </label>
                 <div className="relative">
                   <input
@@ -402,7 +406,7 @@ export function ForgotPasswordPage() {
                     required
                     minLength={8}
                     className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="Enter new password"
+                    placeholder={t('resetPassword.newPasswordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -412,12 +416,12 @@ export function ForgotPasswordPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
+                <p className="mt-1 text-xs text-gray-500">{t('register.passwordRequirement')}</p>
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
+                  {t('auth.confirmPassword')}
                 </label>
                 <div className="relative">
                   <input
@@ -427,7 +431,7 @@ export function ForgotPasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="Confirm new password"
+                    placeholder={t('resetPassword.confirmNewPasswordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -447,10 +451,10 @@ export function ForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Resetting...
+                    {t('resetPassword.resetting')}
                   </>
                 ) : (
-                  'Reset Password'
+                  t('resetPassword.resetPassword')
                 )}
               </button>
             </form>
@@ -464,15 +468,17 @@ export function ForgotPasswordPage() {
                   <UserPlus className="w-6 h-6 text-primary-600" />
                 </div>
                 <p className="text-sm text-gray-600">
-                  No account found with this {mode === 'email' ? 'email' : 'phone number'}.
+                  {mode === 'email'
+                    ? t('forgotPassword.noAccountEmail')
+                    : t('forgotPassword.noAccountPhone')}
                   <br />
-                  <strong>Create one now?</strong>
+                  <strong>{t('forgotPassword.createOneNow')}</strong>
                 </p>
               </div>
 
               <div>
                 <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Create Password
+                  {t('register.createPassword')}
                 </label>
                 <div className="relative">
                   <input
@@ -483,7 +489,7 @@ export function ForgotPasswordPage() {
                     required
                     minLength={8}
                     className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="Create a password"
+                    placeholder={t('register.createPassword')}
                   />
                   <button
                     type="button"
@@ -493,12 +499,12 @@ export function ForgotPasswordPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
+                <p className="mt-1 text-xs text-gray-500">{t('register.passwordRequirement')}</p>
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
+                  {t('auth.confirmPassword')}
                 </label>
                 <div className="relative">
                   <input
@@ -508,7 +514,7 @@ export function ForgotPasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    placeholder="Confirm your password"
+                    placeholder={t('register.confirmPasswordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -528,12 +534,12 @@ export function ForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Creating Account...
+                    {t('register.creating')}
                   </>
                 ) : (
                   <>
                     <UserPlus className="w-5 h-5" />
-                    Create Account
+                    {t('register.createAccount')}
                   </>
                 )}
               </button>
@@ -544,7 +550,9 @@ export function ForgotPasswordPage() {
                 className="w-full text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Try a different {mode === 'email' ? 'email' : 'phone number'}
+                {mode === 'email'
+                  ? t('forgotPassword.tryDifferentEmail')
+                  : t('forgotPassword.tryDifferentPhone')}
               </button>
             </form>
           )}
@@ -556,13 +564,13 @@ export function ForgotPasswordPage() {
                 <CheckCircle2 className="w-8 h-8 text-primary-600" />
               </div>
               <p className="text-gray-600 mb-6">
-                Your password has been reset successfully. You can now sign in with your new password.
+                {t('resetPassword.resetSuccessMessage')}
               </p>
               <Link
                 to={`/login${window.location.search}`}
                 className="inline-flex justify-center items-center gap-2 w-full py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all shadow-sm"
               >
-                Sign In
+                {t('auth.signIn')}
               </Link>
             </div>
           )}
@@ -573,15 +581,15 @@ export function ForgotPasswordPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
                 <CheckCircle2 className="w-8 h-8 text-primary-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Created!</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('forgotPassword.accountCreatedTitle')}</h2>
               <p className="text-gray-600 mb-6">
-                Your account has been created successfully. You are now logged in.
+                {t('forgotPassword.accountCreatedMessage')}
               </p>
               <Link
                 to={`/login${window.location.search}`}
                 className="inline-flex justify-center items-center gap-2 w-full py-2.5 px-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all shadow-sm"
               >
-                Continue
+                {t('common.next')}
               </Link>
             </div>
           )}
@@ -590,12 +598,12 @@ export function ForgotPasswordPage() {
         {/* Back to Login Link */}
         {step !== 'success' && step !== 'account-created' && (
           <p className="mt-6 text-center text-sm text-gray-600">
-            Remember your password?{' '}
+            {t('forgotPassword.rememberPassword')}{' '}
             <Link
               to={`/login${window.location.search}`}
               className="text-primary-600 hover:text-primary-700 font-medium"
             >
-              Sign in
+              {t('auth.signIn')}
             </Link>
           </p>
         )}

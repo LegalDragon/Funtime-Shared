@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Funtime.Identity.Api.Auth;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.DTOs;
 using Funtime.Identity.Api.Models;
@@ -452,9 +453,10 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Validate a JWT token
+    /// Validate a JWT token (supports API key auth for partner applications)
     /// </summary>
     [HttpPost("validate")]
+    [ApiKeyAuthorize(ApiScopes.AuthValidate, AllowJwt = true)]
     public ActionResult<ValidateTokenResponse> ValidateToken([FromBody] ValidateTokenRequest request)
     {
         var (isValid, userId, email, phoneNumber, systemRole, sites) = _jwtService.ValidateToken(request.Token);
@@ -482,33 +484,12 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Force authenticate as a user by ID (for legacy system integration)
-    /// Requires API secret key
+    /// Requires API key with auth:sync scope
     /// </summary>
     [HttpPost("force-auth")]
+    [ApiKeyAuthorize(ApiScopes.AuthSync)]
     public async Task<ActionResult<AuthResponse>> ForceAuth([FromBody] ForceAuthRequest request)
     {
-        var configuredSecret = _configuration["ApiSecretKey"];
-
-        if (string.IsNullOrEmpty(configuredSecret) || configuredSecret == "YOUR_SUPER_SECRET_API_KEY_CHANGE_IN_PRODUCTION")
-        {
-            _logger.LogError("Force auth attempted but API secret key is not configured");
-            return StatusCode(500, new AuthResponse
-            {
-                Success = false,
-                Message = "API secret key is not configured."
-            });
-        }
-
-        if (request.ApiSecretKey != configuredSecret)
-        {
-            _logger.LogWarning("Force auth attempted with invalid API secret key for user {UserId}", request.UserId);
-            return Unauthorized(new AuthResponse
-            {
-                Success = false,
-                Message = "Invalid API secret key."
-            });
-        }
-
         var user = await _context.Users.FindAsync(request.UserId);
         if (user == null)
         {
@@ -537,33 +518,12 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Login or register via external provider (Google, Apple, WeChat, etc.)
-    /// Requires API secret key for server-to-server authentication
+    /// Requires API key with auth:sync scope for server-to-server authentication
     /// </summary>
     [HttpPost("external-login")]
+    [ApiKeyAuthorize(ApiScopes.AuthSync)]
     public async Task<ActionResult<AuthResponse>> ExternalLogin([FromBody] ExternalLoginRequest request)
     {
-        var configuredSecret = _configuration["ApiSecretKey"];
-
-        if (string.IsNullOrEmpty(configuredSecret) || configuredSecret == "YOUR_SUPER_SECRET_API_KEY_CHANGE_IN_PRODUCTION")
-        {
-            _logger.LogError("External login attempted but API secret key is not configured");
-            return StatusCode(500, new AuthResponse
-            {
-                Success = false,
-                Message = "API secret key is not configured."
-            });
-        }
-
-        if (request.ApiSecretKey != configuredSecret)
-        {
-            _logger.LogWarning("External login attempted with invalid API secret key for provider {Provider}", request.Provider);
-            return Unauthorized(new AuthResponse
-            {
-                Success = false,
-                Message = "Invalid API secret key."
-            });
-        }
-
         var normalizedProvider = request.Provider.ToLower();
 
         // Check if this external login already exists
@@ -1276,9 +1236,11 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Validate a JWT token - can be called by any Funtime site to verify tokens
+    /// Supports API key auth for partner applications
     /// </summary>
     [HttpPost("validate-token")]
-    public ActionResult<TokenValidationResponse> ValidateToken([FromBody] TokenValidationRequest request)
+    [ApiKeyAuthorize(ApiScopes.AuthValidate, AllowJwt = true)]
+    public ActionResult<TokenValidationResponse> ValidateTokenCrossSite([FromBody] TokenValidationRequest request)
     {
         var (isValid, userId, email, phoneNumber, systemRole, sites) = _jwtService.ValidateToken(request.Token);
 

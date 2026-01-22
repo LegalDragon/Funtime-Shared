@@ -62,10 +62,14 @@
     "creating": "创建中...",
     "registrationFailed": "注册失败",
     "passwordsDoNotMatch": "两次密码不一致",
-    "agreeToTerms": "我同意",
+    "agreeToTerms": "创建账户即表示您同意我们的",
     "termsOfService": "服务条款",
     "and": "和",
-    "privacyPolicy": "隐私政策"
+    "privacyPolicy": "隐私政策",
+    "createPassword": "创建密码",
+    "confirmPasswordPlaceholder": "确认您的密码",
+    "passwordRequirement": "密码长度至少为8个字符",
+    "sendCode": "发送验证码"
   },
   "forgotPassword": {
     "title": "重置密码",
@@ -75,7 +79,23 @@
     "checkEmail": "请查收邮件",
     "resetLinkSent": "重置链接已发送至 {{email}}",
     "backToLogin": "返回登录",
-    "resetFailed": "发送重置链接失败"
+    "resetFailed": "发送重置链接失败",
+    "passwordReset": "密码已重置",
+    "accountCreated": "账户已创建",
+    "enterCode": "输入验证码",
+    "enterEmailDescription": "输入您的邮箱地址，我们将发送验证码以重置密码。",
+    "enterPhoneDescription": "输入您的手机号码，我们将发送验证码以重置密码。",
+    "codeSentTo": "验证码已发送至 {{destination}}，请在下方输入。",
+    "changeEmail": "更换邮箱",
+    "verifyCode": "验证",
+    "noAccountEmail": "未找到使用此邮箱的账户。",
+    "noAccountPhone": "未找到使用此手机号码的账户。",
+    "createOneNow": "现在创建一个？",
+    "tryDifferentEmail": "尝试其他邮箱",
+    "tryDifferentPhone": "尝试其他手机号码",
+    "accountCreatedTitle": "账户已创建！",
+    "accountCreatedMessage": "您的账户已成功创建，现已登录。",
+    "rememberPassword": "记得密码？"
   },
   "resetPassword": {
     "title": "设置新密码",
@@ -84,7 +104,11 @@
     "resetPassword": "重置密码",
     "resetting": "重置中...",
     "resetSuccess": "密码重置成功",
-    "resetFailed": "密码重置失败"
+    "resetFailed": "密码重置失败",
+    "enterNewPassword": "请在下方输入您的新密码。",
+    "newPasswordPlaceholder": "输入新密码",
+    "confirmNewPasswordPlaceholder": "确认新密码",
+    "resetSuccessMessage": "您的密码已成功重置。现在可以使用新密码登录。"
   },
   "verify": {
     "title": "验证您的账户",

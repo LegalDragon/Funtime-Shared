@@ -12,6 +12,7 @@ public class NotificationHub : Hub
 {
     private readonly ILogger<NotificationHub> _logger;
     private static readonly Dictionary<int, HashSet<string>> _userConnections = new();
+    private static readonly Dictionary<string, HashSet<string>> _siteConnections = new();
     private static readonly object _lock = new();
 
     public NotificationHub(ILogger<NotificationHub> logger)
@@ -74,6 +75,15 @@ public class NotificationHub : Hub
     /// </summary>
     public async Task JoinSiteGroup(string siteKey)
     {
+        lock (_lock)
+        {
+            if (!_siteConnections.ContainsKey(siteKey))
+            {
+                _siteConnections[siteKey] = new HashSet<string>();
+            }
+            _siteConnections[siteKey].Add(Context.ConnectionId);
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, $"site_{siteKey}");
         _logger.LogDebug("Connection {ConnectionId} joined site group {SiteKey}",
             Context.ConnectionId, siteKey);
@@ -84,6 +94,18 @@ public class NotificationHub : Hub
     /// </summary>
     public async Task LeaveSiteGroup(string siteKey)
     {
+        lock (_lock)
+        {
+            if (_siteConnections.ContainsKey(siteKey))
+            {
+                _siteConnections[siteKey].Remove(Context.ConnectionId);
+                if (_siteConnections[siteKey].Count == 0)
+                {
+                    _siteConnections.Remove(siteKey);
+                }
+            }
+        }
+
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"site_{siteKey}");
         _logger.LogDebug("Connection {ConnectionId} left site group {SiteKey}",
             Context.ConnectionId, siteKey);
@@ -112,6 +134,21 @@ public class NotificationHub : Hub
         lock (_lock)
         {
             return _userConnections.ContainsKey(userId) && _userConnections[userId].Count > 0;
+        }
+    }
+
+    /// <summary>
+    /// Get the count of connections for a specific site
+    /// </summary>
+    public static int GetSiteConnectionCount(string siteKey)
+    {
+        lock (_lock)
+        {
+            if (_siteConnections.TryGetValue(siteKey, out var connections))
+            {
+                return connections.Count;
+            }
+            return 0;
         }
     }
 

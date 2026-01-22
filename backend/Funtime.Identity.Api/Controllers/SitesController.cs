@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Funtime.Identity.Api.Auth;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.DTOs;
 using Funtime.Identity.Api.Models;
@@ -12,7 +13,6 @@ namespace Funtime.Identity.Api.Controllers;
 public class SitesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<SitesController> _logger;
 
     // Valid site keys
@@ -26,19 +26,17 @@ public class SitesController : ControllerBase
 
     public SitesController(
         ApplicationDbContext context,
-        IConfiguration configuration,
         ILogger<SitesController> logger)
     {
         _context = context;
-        _configuration = configuration;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get sites the current user has joined
+    /// Get sites the current user has joined (supports API key with sites:read scope)
     /// </summary>
-    [Authorize]
     [HttpGet]
+    [ApiKeyAuthorize(ApiScopes.SitesRead, AllowJwt = true)]
     public async Task<ActionResult<List<UserSiteResponse>>> GetMySites()
     {
         var userId = GetUserIdFromToken();
@@ -63,10 +61,10 @@ public class SitesController : ControllerBase
     }
 
     /// <summary>
-    /// Join a site
+    /// Join a site (supports API key with sites:read scope)
     /// </summary>
-    [Authorize]
     [HttpPost("join")]
+    [ApiKeyAuthorize(ApiScopes.SitesRead, AllowJwt = true)]
     public async Task<ActionResult<UserSiteResponse>> JoinSite([FromBody] JoinSiteRequest request)
     {
         var userId = GetUserIdFromToken();
@@ -132,10 +130,10 @@ public class SitesController : ControllerBase
     }
 
     /// <summary>
-    /// Leave a site
+    /// Leave a site (supports API key with sites:read scope)
     /// </summary>
-    [Authorize]
     [HttpPost("leave")]
+    [ApiKeyAuthorize(ApiScopes.SitesRead, AllowJwt = true)]
     public async Task<ActionResult<ApiResponse>> LeaveSite([FromBody] JoinSiteRequest request)
     {
         var userId = GetUserIdFromToken();
@@ -163,24 +161,12 @@ public class SitesController : ControllerBase
     }
 
     /// <summary>
-    /// Update a user's role on a site (requires API secret key)
+    /// Update a user's role on a site (requires API key with users:write scope)
     /// </summary>
     [HttpPost("role")]
+    [ApiKeyAuthorize(ApiScopes.UsersWrite)]
     public async Task<ActionResult<UserSiteResponse>> UpdateUserRole([FromBody] UpdateSiteRoleRequest request)
     {
-        var configuredSecret = _configuration["ApiSecretKey"];
-
-        if (string.IsNullOrEmpty(configuredSecret) || configuredSecret == "YOUR_SUPER_SECRET_API_KEY_CHANGE_IN_PRODUCTION")
-        {
-            _logger.LogError("Update role attempted but API secret key is not configured");
-            return StatusCode(500, new ApiResponse { Success = false, Message = "API secret key is not configured." });
-        }
-
-        if (request.ApiSecretKey != configuredSecret)
-        {
-            return Unauthorized(new ApiResponse { Success = false, Message = "Invalid API secret key." });
-        }
-
         var userId = GetUserIdFromToken();
         if (userId == null)
         {
@@ -213,10 +199,10 @@ public class SitesController : ControllerBase
     }
 
     /// <summary>
-    /// Check if current user is a member of a specific site
+    /// Check if current user is a member of a specific site (supports API key with sites:read scope)
     /// </summary>
-    [Authorize]
     [HttpGet("check/{siteKey}")]
+    [ApiKeyAuthorize(ApiScopes.SitesRead, AllowJwt = true)]
     public async Task<ActionResult<UserSiteResponse?>> CheckMembership(string siteKey)
     {
         var userId = GetUserIdFromToken();

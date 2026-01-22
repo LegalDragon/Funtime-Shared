@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Funtime.Identity.Api.Auth;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.DTOs;
 using Funtime.Identity.Api.Models;
@@ -23,10 +24,10 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
-    /// Get current user's profile
+    /// Get current user's profile (supports API key with users:read scope)
     /// </summary>
-    [Authorize]
     [HttpGet]
+    [ApiKeyAuthorize(ApiScopes.UsersRead, AllowJwt = true)]
     public async Task<ActionResult<UserProfileResponse>> GetProfile()
     {
         var userId = GetUserIdFromToken();
@@ -52,10 +53,10 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
-    /// Update current user's profile
+    /// Update current user's profile (supports API key with users:write scope)
     /// </summary>
-    [Authorize]
     [HttpPut]
+    [ApiKeyAuthorize(ApiScopes.UsersWrite, AllowJwt = true)]
     public async Task<ActionResult<UserProfileResponse>> UpdateProfile([FromBody] UpdateProfileRequest request)
     {
         var userId = GetUserIdFromToken();
@@ -98,9 +99,10 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
-    /// Get profile by user ID (public info only)
+    /// Get profile by user ID (supports API key with users:read scope)
     /// </summary>
     [HttpGet("{userId:int}")]
+    [ApiKeyAuthorize(ApiScopes.UsersRead, AllowJwt = true)]
     public async Task<ActionResult<UserProfileResponse>> GetProfileById(int userId)
     {
         var profile = await _context.UserProfiles
@@ -115,10 +117,10 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
-    /// Get full user info including profile and sites (requires auth)
+    /// Get full user info including profile and sites (supports API key with users:read scope)
     /// </summary>
-    [Authorize]
     [HttpGet("full")]
+    [ApiKeyAuthorize(ApiScopes.UsersRead, AllowJwt = true)]
     public async Task<ActionResult<UserFullResponse>> GetFullProfile()
     {
         var userId = GetUserIdFromToken();
