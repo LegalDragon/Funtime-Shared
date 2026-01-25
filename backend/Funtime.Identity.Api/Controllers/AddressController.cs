@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Dapper;
@@ -36,7 +37,7 @@ public class AddressController : ControllerBase
     /// Get address by ID - returns full address with GPS and location hierarchy
     /// </summary>
     [HttpGet("{id:int}")]
-    [ApiKeyAuthorize(ApiScopes.AddressesRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<ActionResult<AddressDetailResponse>> GetAddress(int id)
     {
         using var conn = CreateConnection();
@@ -313,7 +314,7 @@ public class AddressController : ControllerBase
     /// Lookup existing address to avoid duplicates
     /// </summary>
     [HttpGet("lookup")]
-    [ApiKeyAuthorize(ApiScopes.AddressesRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<ActionResult<List<AddressLookupResponse>>> LookupAddress(
         [FromQuery] int cityId,
         [FromQuery] string line1,
@@ -339,7 +340,7 @@ public class AddressController : ControllerBase
     /// Quick GPS lookup for an address (for LBS caching)
     /// </summary>
     [HttpGet("{id:int}/gps")]
-    [ApiKeyAuthorize(ApiScopes.AddressesRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<ActionResult<AddressGpsResponse>> GetAddressGps(int id)
     {
         using var conn = CreateConnection();
@@ -365,7 +366,7 @@ public class AddressController : ControllerBase
     /// Batch GPS lookup for multiple addresses
     /// </summary>
     [HttpPost("gps/batch")]
-    [ApiKeyAuthorize(ApiScopes.AddressesRead, AllowJwt = true)]
+    [AllowAnonymous]
     public async Task<ActionResult<List<AddressGpsResponse>>> GetAddressGpsBatch([FromBody] List<int> addressIds)
     {
         if (addressIds == null || addressIds.Count == 0)
