@@ -418,12 +418,12 @@ public class TokenValidationResponse
     public string? Message { get; set; }
 }
 
-// JWT configuration response (for other sites to validate tokens locally)
+// JWT configuration response (for other sites to know token parameters)
+// Note: Signing key intentionally excluded — use /auth/validate-token for verification
 public class JwtConfigResponse
 {
     public string Issuer { get; set; } = string.Empty;
     public string Audience { get; set; } = string.Empty;
-    public string Key { get; set; } = string.Empty;
     public int ExpirationMinutes { get; set; }
 }
 

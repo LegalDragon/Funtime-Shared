@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Funtime.Identity.Api.Auth;
 using Funtime.Identity.Api.Data;
 using Funtime.Identity.Api.Models;
 using Funtime.Identity.Api.Services;
@@ -469,9 +470,10 @@ public class SettingsController : ControllerBase
     /// <summary>
     /// Get user's role for a specific site. Used by calling sites to check if user is admin.
     /// If userId is not specified, returns the role for the authenticated user.
+    /// Requires JWT authentication or a valid API key.
     /// </summary>
     [HttpGet("user-role")]
-    [AllowAnonymous]
+    [ApiKeyAuthorize(AllowJwt = true)]
     public async Task<ActionResult<UserRoleResponse>> GetUserRole(
         [FromQuery] string? site,
         [FromQuery] int? userId)

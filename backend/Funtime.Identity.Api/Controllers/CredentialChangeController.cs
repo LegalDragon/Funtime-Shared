@@ -139,7 +139,7 @@ public class CredentialChangeController : ControllerBase
             _logger.LogError(ex, "Failed to send email change OTP for user {UserId}", userId);
 
             // If SP doesn't exist yet, still return success (for development)
-            _logger.LogWarning("Stored procedure nsp_Credential_Change_Request may not exist. OTP code: {Code}", code);
+            _logger.LogWarning("Stored procedure nsp_Credential_Change_Request may not exist for user {UserId}. OTP was generated but delivery failed.", userId);
 
             return Ok(new CredentialChangeRequestResponse
             {
@@ -364,7 +364,7 @@ public class CredentialChangeController : ControllerBase
             _logger.LogError(ex, "Failed to send phone change OTP for user {UserId}", userId);
 
             // If SP doesn't exist yet, still return success (for development)
-            _logger.LogWarning("Stored procedure nsp_Credential_Change_Request may not exist. OTP code: {Code}", code);
+            _logger.LogWarning("Stored procedure nsp_Credential_Change_Request may not exist for user {UserId}. OTP was generated but delivery failed.", userId);
 
             return Ok(new CredentialChangeRequestResponse
             {
@@ -499,8 +499,7 @@ public class CredentialChangeController : ControllerBase
 
     private static string GenerateOtp()
     {
-        var random = new Random();
-        return random.Next(0, 1000000).ToString("D6");
+        return System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
     }
 
     private async Task<bool> IsRateLimited(int userId, string changeType)

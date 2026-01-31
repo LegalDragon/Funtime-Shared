@@ -1279,11 +1279,11 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid or missing API key" });
         }
 
+        // Security: Do NOT return the signing key. Partner sites should use /auth/validate-token instead.
         return Ok(new JwtConfigResponse
         {
             Issuer = _configuration["Jwt:Issuer"]!,
             Audience = _configuration["Jwt:Audience"]!,
-            Key = _configuration["Jwt:Key"]!,
             ExpirationMinutes = int.Parse(_configuration["Jwt:ExpirationInMinutes"] ?? "60")
         });
     }

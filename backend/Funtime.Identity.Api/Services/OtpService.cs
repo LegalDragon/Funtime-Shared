@@ -219,8 +219,7 @@ public class OtpService : IOtpService
 
     private static string GenerateOtp()
     {
-        var random = new Random();
-        return random.Next(0, 1000000).ToString("D6");
+        return System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
     }
 
     private static bool IsEmail(string identifier)
