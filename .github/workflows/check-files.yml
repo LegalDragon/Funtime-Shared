@@ -1,0 +1,28 @@
+name: Check Files
+
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: 'Path to check'
+        required: false
+        default: 'F:\New_WWW\FuntimeShared\WWW'
+
+jobs:
+  check:
+    runs-on: [self-hosted, windows, iis]
+    steps:
+      - name: List files
+        shell: powershell
+        run: |
+          $path = "${{ inputs.path }}"
+          Write-Host "=== Listing: $path ==="
+          Get-ChildItem $path -Recurse | Select-Object FullName, Length, LastWriteTime | Format-Table -AutoSize
+          Write-Host ""
+          Write-Host "=== index.html content ==="
+          $indexPath = Join-Path $path "index.html"
+          if (Test-Path $indexPath) {
+            Get-Content $indexPath
+          } else {
+            Write-Host "index.html not found at $indexPath"
+          }
