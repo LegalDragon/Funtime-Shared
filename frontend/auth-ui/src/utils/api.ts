@@ -1118,6 +1118,21 @@ export const notificationApi = {
     });
   },
 
+  // App-Profile associations
+  async getAppProfiles(appId: number): Promise<number[]> {
+    return request(`/admin/notifications/apps/${appId}/profiles`, {
+      headers: getAuthHeaders(),
+    });
+  },
+
+  async updateAppProfiles(appId: number, profileIds: number[]): Promise<number[]> {
+    return request(`/admin/notifications/apps/${appId}/profiles`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileIds),
+    });
+  },
+
   // Templates
   async getTemplates(appId?: number): Promise<EmailTemplate[]> {
     const params = appId ? `?appId=${appId}` : '';

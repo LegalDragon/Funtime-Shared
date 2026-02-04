@@ -236,6 +236,55 @@ public class NotificationController : ControllerBase
         }
     }
 
+    [HttpGet("apps/{id}/profiles")]
+    public async Task<ActionResult<List<int>>> GetAppProfiles(int id)
+    {
+        try
+        {
+            using var conn = CreateConnection();
+            var profileIds = (await conn.QueryAsync<int>(
+                "SELECT ProfileId FROM dbo.AppProfiles WHERE AppId = @AppId",
+                new { AppId = id })).ToList();
+            return profileIds;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get profiles for app {Id}", id);
+            return StatusCode(500, new { message = "Failed to get app profiles" });
+        }
+    }
+
+    [HttpPut("apps/{id}/profiles")]
+    public async Task<ActionResult<List<int>>> UpdateAppProfiles(int id, [FromBody] List<int> profileIds)
+    {
+        try
+        {
+            using var conn = CreateConnection();
+            await conn.OpenAsync();
+            using var tx = conn.BeginTransaction();
+
+            await conn.ExecuteAsync(
+                "DELETE FROM dbo.AppProfiles WHERE AppId = @AppId",
+                new { AppId = id }, tx);
+
+            foreach (var pid in profileIds)
+            {
+                await conn.ExecuteAsync(
+                    "INSERT INTO dbo.AppProfiles (AppId, ProfileId) VALUES (@AppId, @ProfileId)",
+                    new { AppId = id, ProfileId = pid }, tx);
+            }
+
+            tx.Commit();
+            _logger.LogInformation("App {Id} profiles updated: [{Profiles}]", id, string.Join(", ", profileIds));
+            return profileIds;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update profiles for app {Id}", id);
+            return StatusCode(500, new { message = "Failed to update app profiles" });
+        }
+    }
+
     [HttpDelete("apps/{id}/key")]
     public async Task<ActionResult> RevokeAppKey(int id)
     {

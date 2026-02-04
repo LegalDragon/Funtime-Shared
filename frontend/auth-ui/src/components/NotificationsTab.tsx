@@ -55,6 +55,10 @@ export function NotificationsTab() {
   // Body view modal state
   const [viewingBody, setViewingBody] = useState<{ title: string; bodyHtml?: string; bodyJson?: string; detailJson?: string; rawData?: string } | null>(null);
 
+  // App-Profile association state
+  const [linkedProfileIds, setLinkedProfileIds] = useState<number[]>([]);
+  const [loadingLinkedProfiles, setLoadingLinkedProfiles] = useState(false);
+
   // API key management state
   const [revealedKey, setRevealedKey] = useState<{ appId: number; key: string } | null>(null);
   const [copiedKeyId, setCopiedKeyId] = useState<number | null>(null);
@@ -199,20 +203,52 @@ export function NotificationsTab() {
     }
   };
 
+  // Load linked profiles when editing an app
+  const loadAppProfiles = async (appId: number) => {
+    setLoadingLinkedProfiles(true);
+    try {
+      const ids = await notificationApi.getAppProfiles(appId);
+      setLinkedProfileIds(ids);
+    } catch (err) {
+      console.error('Failed to load app profiles:', err);
+      setLinkedProfileIds([]);
+    } finally {
+      setLoadingLinkedProfiles(false);
+    }
+  };
+
+  const openAppEditor = (app: Partial<AppRow>) => {
+    setEditingApp(app);
+    if (app.app_ID) {
+      loadAppProfiles(app.app_ID);
+    } else {
+      setLinkedProfileIds([]);
+    }
+    // Ensure profiles are loaded for the checkboxes
+    if (profiles.length === 0) {
+      notificationApi.getProfiles().then(setProfiles).catch(() => {});
+    }
+  };
+
   // App handlers
   const handleSaveApp = async () => {
     if (!editingApp) return;
     setIsLoading(true);
     try {
+      let appId: number;
       if (editingApp.app_ID) {
         await notificationApi.updateApp(editingApp.app_ID, editingApp);
+        appId = editingApp.app_ID;
       } else {
         const created = await notificationApi.createApp(editingApp);
+        appId = created.app_ID;
         // Show the generated API key
         if (created.fullKey) {
           setRevealedKey({ appId: created.app_ID, key: created.fullKey });
         }
       }
+      // Save linked profiles
+      await notificationApi.updateAppProfiles(appId, linkedProfileIds);
       setEditingApp(null);
       loadApps();
     } catch (err) {
@@ -488,7 +524,7 @@ export function NotificationsTab() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold">Applications & API Keys</h3>
               <button
-                onClick={() => setEditingApp({})}
+                onClick={() => openAppEditor({})}
                 className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4" /> Add Application
@@ -593,7 +629,7 @@ export function NotificationsTab() {
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
                       )}
-                      <button onClick={() => setEditingApp(app)} className="p-1.5 hover:bg-gray-100 rounded" title="Edit">
+                      <button onClick={() => openAppEditor(app)} className="p-1.5 hover:bg-gray-100 rounded" title="Edit">
                         <Edit2 className="w-4 h-4 text-gray-500" />
                       </button>
                     </div>
@@ -980,7 +1016,7 @@ export function NotificationsTab() {
       {/* App Edit Modal */}
       {editingApp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full m-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full m-4 max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold">{editingApp.app_ID ? 'Edit' : 'Add'} Application</h3>
               <button onClick={() => setEditingApp(null)}><X className="w-5 h-5" /></button>
@@ -1028,6 +1064,43 @@ export function NotificationsTab() {
                   placeholder="Optional notes about this application"
                 />
               </div>
+              {/* Linked Profiles */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Linked Profiles</label>
+                {loadingLinkedProfiles ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading profiles...
+                  </div>
+                ) : profiles.length > 0 ? (
+                  <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                    {profiles.map((p) => (
+                      <label key={p.profileId} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={linkedProfileIds.includes(p.profileId)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setLinkedProfileIds([...linkedProfileIds, p.profileId]);
+                            } else {
+                              setLinkedProfileIds(linkedProfileIds.filter(id => id !== p.profileId));
+                            }
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">
+                          {p.profileCode || `Profile ${p.profileId}`}
+                          {p.fromEmail && <span className="text-gray-400 ml-1">({p.fromEmail})</span>}
+                        </span>
+                        {!p.isActive && <span className="text-xs text-gray-400 italic">inactive</span>}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No profiles available</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">Select which mail profiles this app can use for sending.</p>
+              </div>
+
               {!editingApp.app_ID && (
                 <p className="text-sm text-blue-600 flex items-center gap-1">
                   <Key className="w-4 h-4" />
@@ -1037,7 +1110,10 @@ export function NotificationsTab() {
             </div>
             <div className="p-4 border-t flex justify-end gap-2">
               <button onClick={() => setEditingApp(null)} className="px-4 py-2 border rounded-lg">Cancel</button>
-              <button onClick={handleSaveApp} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Save</button>
+              <button onClick={handleSaveApp} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 flex items-center gap-2">
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save
+              </button>
             </div>
           </div>
         </div>
