@@ -150,6 +150,9 @@ public class UserResponse
     public int Id { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? AvatarUrl { get; set; }
     public string? SystemRole { get; set; }
     public bool IsEmailVerified { get; set; }
     public bool IsPhoneVerified { get; set; }

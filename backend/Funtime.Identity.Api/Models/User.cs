@@ -23,6 +23,12 @@ public class User
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Profile picture URL (from OAuth provider or uploaded)
+    /// </summary>
+    [MaxLength(500)]
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
     /// System role: "SU" for super admin, null for regular users
     /// </summary>
     [MaxLength(10)]

@@ -289,7 +289,10 @@ public class OAuthController : ControllerBase
             Provider = "google",
             ProviderId = userJson.GetProperty("id").GetString()!,
             Email = userJson.TryGetProperty("email", out var email) ? email.GetString() : null,
-            Name = userJson.TryGetProperty("name", out var name) ? name.GetString() : null
+            Name = userJson.TryGetProperty("name", out var name) ? name.GetString() : null,
+            FirstName = userJson.TryGetProperty("given_name", out var givenName) ? givenName.GetString() : null,
+            LastName = userJson.TryGetProperty("family_name", out var familyName) ? familyName.GetString() : null,
+            PictureUrl = userJson.TryGetProperty("picture", out var picture) ? picture.GetString() : null
         };
     }
 
@@ -534,15 +537,21 @@ public class OAuthController : ControllerBase
 
         if (user == null)
         {
-            // Parse name into first/last (Google returns full name like "John Doe")
-            var (firstName, lastName) = ParseName(userInfo.Name);
+            // Use FirstName/LastName from provider if available, otherwise parse from Name
+            var firstName = userInfo.FirstName;
+            var lastName = userInfo.LastName;
+            if (string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(userInfo.Name))
+            {
+                (firstName, lastName) = ParseName(userInfo.Name);
+            }
             
             // Create new user
             user = new User
             {
                 Email = userInfo.Email?.ToLower(),
-                FirstName = firstName,
-                LastName = lastName,
+                FirstName = firstName ?? string.Empty,
+                LastName = lastName ?? string.Empty,
+                AvatarUrl = userInfo.PictureUrl,
                 IsEmailVerified = !string.IsNullOrEmpty(userInfo.Email), // OAuth emails are verified
                 CreatedAt = DateTime.UtcNow,
                 LastLoginAt = DateTime.UtcNow
@@ -556,6 +565,11 @@ public class OAuthController : ControllerBase
             if (!user.IsEmailVerified && !string.IsNullOrEmpty(userInfo.Email))
             {
                 user.IsEmailVerified = true;
+            }
+            // Update avatar if user doesn't have one and provider has it
+            if (string.IsNullOrEmpty(user.AvatarUrl) && !string.IsNullOrEmpty(userInfo.PictureUrl))
+            {
+                user.AvatarUrl = userInfo.PictureUrl;
             }
         }
 
@@ -682,4 +696,7 @@ public class OAuthUserInfo
     public string ProviderId { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Name { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? PictureUrl { get; set; }
 }
