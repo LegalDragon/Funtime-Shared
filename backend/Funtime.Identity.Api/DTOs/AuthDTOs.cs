@@ -88,16 +88,18 @@ public class OtpVerifyRequest
     public string Code { get; set; } = string.Empty;
 
     /// <summary>
-    /// Optional: First name for new user registration via OTP
+    /// First name for new user registration via OTP
     /// </summary>
+    [Required]
     [MaxLength(100)]
-    public string? FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Optional: Last name for new user registration via OTP
+    /// Last name for new user registration via OTP
     /// </summary>
+    [Required]
     [MaxLength(100)]
-    public string? LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 }
 
 // Link Phone to existing account
