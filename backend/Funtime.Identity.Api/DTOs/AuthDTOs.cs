@@ -14,6 +14,14 @@ public class RegisterRequest
     [MinLength(8)]
     [MaxLength(100)]
     public string Password { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(100)]
+    public string FirstName { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(100)]
+    public string LastName { get; set; } = string.Empty;
 }
 
 // Email/Password Login
@@ -78,6 +86,18 @@ public class OtpVerifyRequest
     [Required]
     [StringLength(6, MinimumLength = 6)]
     public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional: First name for new user registration via OTP
+    /// </summary>
+    [MaxLength(100)]
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// Optional: Last name for new user registration via OTP
+    /// </summary>
+    [MaxLength(100)]
+    public string? LastName { get; set; }
 }
 
 // Link Phone to existing account

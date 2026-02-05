@@ -80,6 +80,8 @@ public class AuthController : ControllerBase
         {
             Email = request.Email.ToLower(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            FirstName = request.FirstName?.Trim() ?? "",
+            LastName = request.LastName?.Trim() ?? "",
             CreatedAt = DateTime.UtcNow
         };
 
@@ -259,6 +261,8 @@ public class AuthController : ControllerBase
             {
                 PhoneNumber = normalizedPhone,
                 IsPhoneVerified = true,
+                FirstName = request.FirstName?.Trim() ?? "",
+                LastName = request.LastName?.Trim() ?? "",
                 CreatedAt = DateTime.UtcNow
             };
             _context.Users.Add(user);
