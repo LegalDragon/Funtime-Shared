@@ -601,8 +601,9 @@ public class OAuthController : ControllerBase
 
     private RedirectResult RedirectWithToken(User user, string token, OAuthState? state)
     {
-        // Determine where to redirect
-        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+        // Determine where to redirect - use request origin as fallback
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var frontendUrl = _configuration["FrontendUrl"] ?? baseUrl;
 
         // Build redirect URL
         var redirectUrl = state?.ReturnUrl;
@@ -635,7 +636,12 @@ public class OAuthController : ControllerBase
     private ActionResult RedirectWithToken(string token, User user, OAuthState? state)
     {
         // Determine where to redirect
-        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+        // Use returnUrl from state if available, otherwise detect from request
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var frontendUrl = _configuration["FrontendUrl"] ?? baseUrl;
+
+        _logger.LogInformation("RedirectWithToken - state.ReturnUrl: {ReturnUrl}, FrontendUrl: {FrontendUrl}, baseUrl: {BaseUrl}",
+            state?.ReturnUrl ?? "(null)", frontendUrl, baseUrl);
 
         // Build redirect URL
         string redirectUrl;
@@ -679,7 +685,8 @@ public class OAuthController : ControllerBase
 
     private RedirectResult RedirectToLoginWithError(string error)
     {
-        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var frontendUrl = _configuration["FrontendUrl"] ?? baseUrl;
         return Redirect($"{frontendUrl}/login?error={Uri.EscapeDataString(error)}");
     }
 }
