@@ -46,6 +46,20 @@ public class JwtService : IJwtService
             claims.Add(new Claim(ClaimTypes.Role, user.SystemRole));
         }
 
+        // Add name and avatar claims
+        if (!string.IsNullOrEmpty(user.FirstName))
+        {
+            claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
+        }
+        if (!string.IsNullOrEmpty(user.LastName))
+        {
+            claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
+        }
+        if (!string.IsNullOrEmpty(user.AvatarUrl))
+        {
+            claims.Add(new Claim("avatar", user.AvatarUrl));
+        }
+
         // Fetch user's active sites
         List<string> userSites;
 
@@ -106,6 +120,20 @@ public class JwtService : IJwtService
         if (!string.IsNullOrEmpty(user.SystemRole))
         {
             claims.Add(new Claim(ClaimTypes.Role, user.SystemRole));
+        }
+
+        // Add name and avatar claims
+        if (!string.IsNullOrEmpty(user.FirstName))
+        {
+            claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
+        }
+        if (!string.IsNullOrEmpty(user.LastName))
+        {
+            claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
+        }
+        if (!string.IsNullOrEmpty(user.AvatarUrl))
+        {
+            claims.Add(new Claim("avatar", user.AvatarUrl));
         }
 
         var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationInMinutes"] ?? "60");
